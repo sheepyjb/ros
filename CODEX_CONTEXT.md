@@ -30,12 +30,12 @@ Verification:
 
 - 已运行纯 Python 单元测试：`PYTHONPATH=src/turtlesim_p_controller python3 -m unittest discover -s src/turtlesim_p_controller/test`。
 - 已运行 Python 语法检查：`python3 -m compileall src/turtlesim_p_controller/turtlesim_p_controller`。
-- 当前环境未检测到 `ros2` 和 `colcon` 命令，因此尚未本机构建或运行 turtlesim。
+- 当前环境已安装 ROS 2 Jazzy。
+- 已运行 `colcon build --packages-select turtlesim_p_controller`，构建通过。
+- 已运行 `ros2 pkg executables turtlesim_p_controller`，确认入口为 `turtle_goal_controller`。
 
 Remaining tasks:
 
-- 安装 ROS 2 Jazzy 和 colcon。
-- 运行 `colcon build --packages-select turtlesim_p_controller`。
 - 启动 `turtlesim_node` 和 `turtle_goal_controller`，观察乌龟是否移动到目标点。
 - 根据实际运动效果调参：`linear_gain`、`angular_gain`、`max_linear_speed`、`max_angular_speed`。
 
@@ -55,3 +55,5 @@ Key files:
 - 已制定 8 到 10 周路线，重点从 ROS 2 基础、turtlesim、tf2、URDF、Gazebo、YOLO 接入、控制、Nav2 到综合项目。
 - 用户确认使用中文交流。
 - 用户要求做 git 管理，仓库已初始化。
+- 用户已在 Ubuntu 24.04 WSL2 中安装 ROS 2 Jazzy。
+- 已构建第 1 周 `turtlesim_p_controller` 包并确认 ROS 2 可发现可执行入口。
