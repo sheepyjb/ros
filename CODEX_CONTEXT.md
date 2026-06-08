@@ -43,6 +43,7 @@ Key files:
 
 - `README.md`
 - `ros2_learning_notes.md`
+- `src/turtlesim_p_controller/CODE_WALKTHROUGH.md`
 - `src/turtlesim_p_controller/turtlesim_p_controller/controller_math.py`
 - `src/turtlesim_p_controller/turtlesim_p_controller/turtle_goal_controller.py`
 - `src/turtlesim_p_controller/test/test_controller_math.py`
@@ -57,3 +58,4 @@ Key files:
 - 用户要求做 git 管理，仓库已初始化。
 - 用户已在 Ubuntu 24.04 WSL2 中安装 ROS 2 Jazzy。
 - 已构建第 1 周 `turtlesim_p_controller` 包并确认 ROS 2 可发现可执行入口。
+- 已新增 `src/turtlesim_p_controller/CODE_WALKTHROUGH.md`，按 0 基础解释该 package 的目录、文件、配置和核心代码。

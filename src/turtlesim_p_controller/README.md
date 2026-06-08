@@ -2,6 +2,8 @@
 
 第 1 周练习：用 P 控制让 turtlesim 乌龟移动到固定目标点。
 
+如果你是 0 基础，先读 [CODE_WALKTHROUGH.md](CODE_WALKTHROUGH.md)，里面按目录、文件和代码逐行解释这个包。
+
 ## 这个文件夹是什么
 
 `/home/sheepyjb/ros/src/turtlesim_p_controller` 是一个 ROS 2 Python package。它不是整个 ROS 2 项目，而是 workspace 里的一个功能包。
