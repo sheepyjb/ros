@@ -1,6 +1,33 @@
-# turtlesim_p_controller 逐目录逐文件讲解
+# 第 1 周：ROS 2 基础通信
 
-这份文档按 0 基础入门来讲解 `/home/sheepyjb/ros/src/turtlesim_p_controller`。
+这份文档对应学习计划里的第 1 周：ROS 2 基础通信。它按 0 基础入门来讲解 `/home/sheepyjb/ros/src/turtlesim_p_controller`，并配套练习题、观察问题和知识问答。
+
+本周目标：
+
+```text
+理解 ROS 2 的节点、话题、服务、动作、参数，以及如何用命令行观察系统。
+```
+
+本周要学：
+
+```text
+ros2 node
+ros2 topic
+ros2 service
+ros2 action
+ros2 param
+rqt_graph
+turtlesim
+```
+
+本周练习：
+
+```text
+启动 turtlesim_node
+写一个控制节点订阅 /turtle1/pose
+发布 /turtle1/cmd_vel
+用 P 控制让乌龟朝一个固定目标点运动
+```
 
 先记住三层关系：
 
@@ -32,7 +59,7 @@ node 节点负责订阅、计算、发布
 ```text
 turtlesim_p_controller/
 ├── README.md
-├── CODE_WALKTHROUGH.md
+├── WEEK_01_ROS2_BASIC_COMMUNICATION.md
 ├── package.xml
 ├── setup.py
 ├── setup.cfg
@@ -159,7 +186,7 @@ test_controller_math.py
 
 它不参与程序运行。删掉它程序也能跑，但学习项目里应该保留。
 
-### 2. `CODE_WALKTHROUGH.md`
+### 2. `WEEK_01_ROS2_BASIC_COMMUNICATION.md`
 
 就是你现在看的这份文档。
 
@@ -978,3 +1005,389 @@ node
 topic
 message
 ```
+
+## 十四、第一周练习题
+
+这一节用来检查你是不是真的掌握了第一周内容。不要只复制命令，要边做边观察输出。
+
+### 练习 1：启动 turtlesim
+
+目标：确认你能启动第一个 ROS 2 节点。
+
+终端 1：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+ros2 run turtlesim turtlesim_node
+```
+
+观察：
+
+- 是否弹出 TurtleSim 窗口。
+- 终端里是否出现 `Starting turtlesim`。
+- 是否生成了一只 `turtle1`。
+
+问题：
+
+1. 这条命令启动了哪个 package 里的哪个可执行程序？
+2. 这个节点的节点名是什么？
+3. 这个终端为什么不能关？
+
+验收标准：
+
+- 你能解释 `ros2 run turtlesim turtlesim_node` 里的两个 `turtlesim` 分别是什么。
+- 你能说出这个节点负责仿真乌龟，并提供 `/turtle1/pose`、`/turtle1/cmd_vel` 等接口。
+
+### 练习 2：查看节点
+
+目标：掌握 `ros2 node`。
+
+另开终端：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+ros2 node list
+```
+
+继续查看节点详情：
+
+```bash
+ros2 node info /turtlesim
+```
+
+问题：
+
+1. `ros2 node list` 输出了什么？
+2. `/turtlesim` 有哪些 publishers？
+3. `/turtlesim` 有哪些 subscribers？
+4. `/turtlesim` 提供了哪些 services？
+5. `/turtlesim` 提供了哪个 action？
+
+验收标准：
+
+- 你能从 `ros2 node info /turtlesim` 里找到 `/turtle1/pose`。
+- 你能从 `ros2 node info /turtlesim` 里找到 `/turtle1/cmd_vel`。
+- 你能说出 publisher 是“发布者”，subscriber 是“订阅者”。
+
+### 练习 3：查看话题
+
+目标：理解 topic 是连续数据流。
+
+执行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+ros2 topic list
+```
+
+查看位姿数据：
+
+```bash
+ros2 topic echo /turtle1/pose
+```
+
+查看话题频率：
+
+```bash
+ros2 topic hz /turtle1/pose
+```
+
+问题：
+
+1. `/turtle1/pose` 是谁发布的？
+2. `/turtle1/pose` 的消息类型是什么？
+3. `x`、`y`、`theta` 分别表示什么？
+4. 为什么 `/turtle1/pose` 适合用 topic，而不是 service？
+
+验收标准：
+
+- 你能解释 `/turtle1/pose` 是 turtlesim 持续发布的当前状态。
+- 你能看懂 `x`、`y`、`theta`。
+- 你能说出 topic 适合传连续变化的数据。
+
+### 练习 4：手动发布速度
+
+目标：理解 `/turtle1/cmd_vel` 的方向。
+
+执行一次速度命令：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+ros2 topic pub --once /turtle1/cmd_vel geometry_msgs/msg/Twist \
+  "{linear: {x: 1.0}, angular: {z: 0.0}}"
+```
+
+再试一个转弯命令：
+
+```bash
+ros2 topic pub --once /turtle1/cmd_vel geometry_msgs/msg/Twist \
+  "{linear: {x: 1.0}, angular: {z: 1.0}}"
+```
+
+问题：
+
+1. `/turtle1/cmd_vel` 是谁订阅的？
+2. `linear.x` 控制什么？
+3. `angular.z` 控制什么？
+4. 为什么这里的消息类型是 `geometry_msgs/msg/Twist`？
+
+验收标准：
+
+- 你能通过手动发布 `/turtle1/cmd_vel` 让乌龟动起来。
+- 你能说清楚 `/turtle1/cmd_vel` 是“控制器发给 turtlesim 的速度命令”。
+
+### 练习 5：运行自己的 P 控制器
+
+目标：理解自己写的节点如何接入 ROS 图。
+
+终端 1 保持 turtlesim 运行。
+
+终端 2：
+
+```bash
+cd /home/sheepyjb/ros
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run turtlesim_p_controller turtle_goal_controller
+```
+
+观察：
+
+- 乌龟是否朝目标点移动。
+- 是否到目标点附近后停止。
+
+另开终端查看节点：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source /home/sheepyjb/ros/install/setup.bash
+ros2 node list
+```
+
+问题：
+
+1. 自己写的节点名是什么？
+2. 它订阅哪个 topic？
+3. 它发布哪个 topic？
+4. 它为什么需要同时读位姿和发速度？
+
+验收标准：
+
+- 你能看到 `/turtle_goal_controller`。
+- 你能解释闭环关系：读 `/turtle1/pose`，算速度，发 `/turtle1/cmd_vel`。
+
+### 练习 6：调节 P 控制参数
+
+目标：观察 `linear_gain` 和 `angular_gain` 的影响。
+
+先停掉旧控制器，然后运行：
+
+```bash
+cd /home/sheepyjb/ros
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run turtlesim_p_controller turtle_goal_controller --ros-args \
+  -p goal_x:=9.0 \
+  -p goal_y:=9.0 \
+  -p linear_gain:=0.4 \
+  -p angular_gain:=6.0
+```
+
+再试一组：
+
+```bash
+ros2 run turtlesim_p_controller turtle_goal_controller --ros-args \
+  -p goal_x:=9.0 \
+  -p goal_y:=9.0 \
+  -p linear_gain:=1.5 \
+  -p angular_gain:=1.0
+```
+
+问题：
+
+1. `linear_gain` 变大时，乌龟前进更快还是更慢？
+2. `angular_gain` 变小时，为什么可能绕圈？
+3. 为什么 `linear_gain:=8` 会报类型错误，而 `linear_gain:=8.0` 可以？
+4. 如果乌龟已经到目标附近，再调参数为什么可能看不出效果？
+
+验收标准：
+
+- 你能观察到不同参数导致不同轨迹。
+- 你能解释“角速度系数太小会转向不足，线速度还在前进，所以可能绕圈”。
+
+### 练习 7：使用 service 重置实验
+
+目标：理解 service 是一次请求一次响应。
+
+保持 turtlesim 运行，另开终端：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+ros2 service list
+```
+
+调用 reset：
+
+```bash
+ros2 service call /reset std_srvs/srv/Empty "{}"
+```
+
+问题：
+
+1. `/reset` 是谁提供的？
+2. `ros2 service call` 和 `ros2 topic pub` 有什么不同？
+3. 如果 turtlesim 没有运行，调用 `/reset` 会发生什么？
+4. 为什么比较不同参数时，最好 reset 到同一起点？
+
+验收标准：
+
+- 你能成功 reset turtlesim。
+- 你能解释 service 适合“一次性请求”，例如重置仿真。
+
+### 练习 8：查看 action
+
+目标：初步认识 action 适合长时间任务。
+
+执行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+ros2 action list
+```
+
+查看 action 信息：
+
+```bash
+ros2 action info /turtle1/rotate_absolute
+```
+
+如果你想试一下，先停掉自己的控制器，再执行：
+
+```bash
+ros2 action send_goal /turtle1/rotate_absolute turtlesim/action/RotateAbsolute "{theta: 1.57}"
+```
+
+问题：
+
+1. turtlesim 提供了哪个 action？
+2. action 和 service 有什么区别？
+3. 为什么“旋转到某个角度”适合用 action？
+
+验收标准：
+
+- 你能说出 action 适合有持续过程、可反馈、可取消的任务。
+- 你知道 service 更适合短的一问一答。
+
+### 练习 9：用 rqt_graph 看系统结构
+
+目标：把节点和话题关系可视化。
+
+执行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+rqt_graph
+```
+
+问题：
+
+1. 图里有哪些节点？
+2. `/turtle1/pose` 的箭头从哪里指向哪里？
+3. `/turtle1/cmd_vel` 的箭头从哪里指向哪里？
+4. 为什么 rqt_graph 对调试 ROS 系统很有用？
+
+验收标准：
+
+- 你能在图中看出 turtlesim 和控制器之间的通信方向。
+- 你能用图解释闭环控制结构。
+
+### 练习 10：排查常见错误
+
+目标：遇到问题时能按顺序定位。
+
+故意新开一个终端，只执行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+ros2 run turtlesim_p_controller turtle_goal_controller
+```
+
+如果出现：
+
+```text
+Package 'turtlesim_p_controller' not found
+```
+
+问题：
+
+1. 少执行了哪条命令？
+2. `/opt/ros/jazzy/setup.bash` 和 `install/setup.bash` 分别负责什么？
+3. 如果 `/reset` 一直显示 `waiting for service to become available...`，你应该先检查什么？
+
+验收标准：
+
+- 你能主动补上 `source /home/sheepyjb/ros/install/setup.bash`。
+- 你能按“节点 -> 话题/服务 -> 参数 -> 环境 source”的顺序排查。
+
+## 十五、知识问答
+
+这些问题不要求背诵，但要能用自己的话讲清楚。
+
+1. ROS 2 workspace 是什么？
+2. ROS 2 package 是什么？
+3. node 是什么？
+4. topic 是什么？
+5. service 是什么？
+6. action 是什么？
+7. parameter 是什么？
+8. `/turtle1/pose` 的消息方向是什么？
+9. `/turtle1/cmd_vel` 的消息方向是什么？
+10. 为什么控制器要订阅 `/turtle1/pose`？
+11. 为什么控制器要发布 `/turtle1/cmd_vel`？
+12. 什么是闭环控制？
+13. 为什么角速度要根据角度误差计算？
+14. 为什么 `angular_gain` 太小可能导致绕圈？
+15. 为什么到目标附近后速度变成 0？
+16. 为什么 `linear_gain:=8` 会类型错误？
+17. 为什么每次新终端都要 source 环境？
+18. `ros2 node list` 用来查什么？
+19. `ros2 topic echo` 用来查什么？
+20. `rqt_graph` 比命令行好在哪里？
+
+## 十六、参考答案要点
+
+1. workspace 是工作空间，里面通常有 `src/`、`build/`、`install/`、`log/`。
+2. package 是功能包，一个 package 负责一类功能。
+3. node 是运行中的功能单元，例如 `/turtlesim`、`/turtle_goal_controller`。
+4. topic 是连续数据流，适合位姿、速度、图像、雷达这类不断变化的数据。
+5. service 是一次请求一次响应，适合 reset、查询、保存地图这类短操作。
+6. action 是有过程的任务，适合导航、旋转到角度、机械臂运动这类可反馈任务。
+7. parameter 是节点运行配置，例如目标点、速度比例系数。
+8. `/turtlesim` 发布 `/turtle1/pose`，控制器订阅它。
+9. 控制器发布 `/turtle1/cmd_vel`，`/turtlesim` 订阅它。
+10. 控制器需要知道当前位置，才能计算离目标还有多远、方向差多少。
+11. 控制器需要发速度，才能让 turtlesim 里的乌龟运动。
+12. 闭环控制是“测量当前状态 -> 计算误差 -> 输出控制量 -> 状态改变 -> 再测量”。
+13. 角速度根据角度误差计算，才能偏得多时快转，偏得少时慢转，对准后不转。
+14. `angular_gain` 太小时转向修正慢，但线速度还在前进，所以可能绕大圈。
+15. 因为 `distance_error < goal_tolerance` 时，代码主动返回 0 速度。
+16. ROS 2 参数有类型；`8` 是整数，`8.0` 是浮点数，而代码声明的默认值是浮点数。
+17. `source /opt/ros/jazzy/setup.bash` 让终端认识系统 ROS 2；`source install/setup.bash` 让终端认识自己的 workspace。
+18. `ros2 node list` 用来查看当前有哪些节点正在运行。
+19. `ros2 topic echo` 用来查看某个 topic 上正在传输的消息内容。
+20. `rqt_graph` 能把节点和 topic 的关系画成图，更容易看清系统结构。
+
+## 十七、第一周通过标准
+
+你可以进入下一周的标准：
+
+- 能独立启动 `turtlesim_node`。
+- 能独立启动 `turtle_goal_controller`。
+- 能解释 `/turtle1/pose` 和 `/turtle1/cmd_vel` 的方向。
+- 能用 `ros2 node list`、`ros2 topic list`、`ros2 topic echo` 观察系统。
+- 能用 `/reset` 服务重置 turtlesim。
+- 能说出 service 和 topic 的区别。
+- 能找到 turtlesim 的 action，并说出 action 和 service 的区别。
+- 能调节 `linear_gain` 和 `angular_gain`，并解释轨迹变化。
+- 能说明为什么角速度要根据角度误差闭环控制。
+- 遇到 `Package not found`、参数类型错误、`/reset` 等待服务时，能按顺序排查。

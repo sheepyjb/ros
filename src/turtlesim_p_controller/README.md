@@ -2,7 +2,7 @@
 
 第 1 周练习：用 P 控制让 turtlesim 乌龟移动到固定目标点。
 
-如果你是 0 基础，先读 [CODE_WALKTHROUGH.md](CODE_WALKTHROUGH.md)，里面按目录、文件和代码逐行解释这个包。
+如果你是 0 基础，先读 [WEEK_01_ROS2_BASIC_COMMUNICATION.md](WEEK_01_ROS2_BASIC_COMMUNICATION.md)，里面按第 1 周目标讲解目录、文件、代码、练习题和知识问答。
 
 ## 这个文件夹是什么
 

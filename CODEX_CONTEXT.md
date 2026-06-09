@@ -43,12 +43,19 @@ Key files:
 
 - `README.md`
 - `ros2_learning_notes.md`
-- `src/turtlesim_p_controller/CODE_WALKTHROUGH.md`
+- `src/turtlesim_p_controller/WEEK_01_ROS2_BASIC_COMMUNICATION.md`
 - `src/turtlesim_p_controller/turtlesim_p_controller/controller_math.py`
 - `src/turtlesim_p_controller/turtlesim_p_controller/turtle_goal_controller.py`
 - `src/turtlesim_p_controller/test/test_controller_math.py`
 
 ## Session Notes
+
+### 2026-06-09
+
+- 用户确认第 1 周 turtlesim P 控制内容已掌握，要求第一周文档与学习计划保持一致。
+- 已将第一周逐文件讲解文档统一命名为 `WEEK_01_ROS2_BASIC_COMMUNICATION.md`。
+- 第一周文档已补充本周目标、要学命令、练习题、知识问答、参考答案要点和通过标准。
+- 约定后续第二周小课使用 `WEEK_02_01_...`、`WEEK_02_02_...` 命名。
 
 ### 2026-06-08
 
@@ -58,4 +65,5 @@ Key files:
 - 用户要求做 git 管理，仓库已初始化。
 - 用户已在 Ubuntu 24.04 WSL2 中安装 ROS 2 Jazzy。
 - 已构建第 1 周 `turtlesim_p_controller` 包并确认 ROS 2 可发现可执行入口。
-- 已新增 `src/turtlesim_p_controller/CODE_WALKTHROUGH.md`，按 0 基础解释该 package 的目录、文件、配置和核心代码。
+- 已将第一周文档命名为 `src/turtlesim_p_controller/WEEK_01_ROS2_BASIC_COMMUNICATION.md`，按 0 基础解释该 package 的目录、文件、配置和核心代码，并补充第一周练习题、知识问答和通过标准。
+- 后续第二周小课采用 `WEEK_02_01_...`、`WEEK_02_02_...` 这种命名，表示第 2 周第 1/2 小课。
