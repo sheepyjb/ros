@@ -2,13 +2,12 @@
 
 ## Latest Snapshot
 
-Date: 2026-06-08
+Date: 2026-06-09
 
 Current goal:
 
-- 建立 `/home/sheepyjb/ros` 为 git 管理的 ROS 2 学习仓库。
-- 创建 ROS 2 学习计划笔记。
-- 创建第 1 周 turtlesim + P 控制练习。
+- 第 1 周 ROS 2 基础通信学习已完成。
+- 下一步进入第 2 周：工作空间、包、接口、launch 和参数组织。
 
 Completed work:
 
@@ -19,12 +18,20 @@ Completed work:
 - 将 P 控制数学逻辑拆到 `controller_math.py`，便于无 ROS 环境下单元测试。
 - 创建 `turtle_goal_controller.py` 作为 ROS 2 节点入口。
 - 创建单元测试 `test_controller_math.py`。
+- 安装并验证 ROS 2 Jazzy 环境。
+- 成功运行 `turtlesim_node` 和 `turtle_goal_controller`，完成 `/turtle1/pose` -> 控制器 -> `/turtle1/cmd_vel` 闭环。
+- 通过调节 `linear_gain`、`angular_gain`、速度限幅和目标点，观察并理解了轨迹变化、绕圈原因、到达阈值停止和参数类型错误。
+- 第一周课件已统一命名为 `src/turtlesim_p_controller/WEEK_01_ROS2_BASIC_COMMUNICATION.md`。
+- 第一周课件已补充练习题、知识问答、参考答案、通过标准和 rqt_graph 系统结构图。
+- 第一周核心代码已补充教学注释。
 
 Important decisions:
 
 - 学习环境建议使用 Ubuntu 24.04 + ROS 2 Jazzy。
 - 第一个练习只做 turtlesim P 控制，不引入 Gazebo/Nav2，降低第一周复杂度。
 - 控制数学与 ROS 2 节点分离，原因是数学逻辑可以在没有 ROS 2 的环境中验证。
+- 文档命名规则：整周课件使用 `WEEK_01_...`；第二周起的小课使用 `WEEK_02_01_...`、`WEEK_02_02_...`。
+- 后续每一课都要配套练习题、观察问题、知识问答、参考答案和验收标准。
 
 Verification:
 
@@ -33,17 +40,22 @@ Verification:
 - 当前环境已安装 ROS 2 Jazzy。
 - 已运行 `colcon build --packages-select turtlesim_p_controller`，构建通过。
 - 已运行 `ros2 pkg executables turtlesim_p_controller`，确认入口为 `turtle_goal_controller`。
+- 已实际运行 turtlesim 图形窗口和控制器节点。
+- 已使用 `/reset` 服务验证 service 调用。
+- 已使用 rqt_graph 观察 `/turtlesim` 和 `/turtle_goal_controller` 的 topic 连接关系。
 
 Remaining tasks:
 
-- 启动 `turtlesim_node` 和 `turtle_goal_controller`，观察乌龟是否移动到目标点。
-- 根据实际运动效果调参：`linear_gain`、`angular_gain`、`max_linear_speed`、`max_angular_speed`。
+- 开始第 2 周第 1 小课，建议命名为 `WEEK_02_01_LAUNCH_AND_PARAMS.md`。
+- 新增 launch 文件和 YAML 参数文件，学习用 `ros2 launch` 一次启动多个节点。
+- 后续创建 `robot_bringup` 包和自定义接口包。
 
 Key files:
 
 - `README.md`
 - `ros2_learning_notes.md`
 - `src/turtlesim_p_controller/WEEK_01_ROS2_BASIC_COMMUNICATION.md`
+- `src/turtlesim_p_controller/assets/rqt_graph_turtlesim_controller.svg`
 - `src/turtlesim_p_controller/turtlesim_p_controller/controller_math.py`
 - `src/turtlesim_p_controller/turtlesim_p_controller/turtle_goal_controller.py`
 - `src/turtlesim_p_controller/test/test_controller_math.py`
@@ -52,6 +64,13 @@ Key files:
 
 ### 2026-06-09
 
+- Progress/result checkpoint:
+  - 第一周 ROS 2 基础通信已完成。
+  - 已掌握并实践 `ros2 node`、`ros2 topic`、`ros2 service`、`ros2 action`、`ros2 param`、`rqt_graph` 和 `turtlesim`。
+  - 已能解释 `/turtle1/pose` 和 `/turtle1/cmd_vel` 的消息方向。
+  - 已能调节 P 控制参数并解释 `linear_gain`、`angular_gain` 对轨迹的影响。
+  - 已能解释角速度为什么要根据角度误差闭环控制。
+  - 结果：可以进入第 2 周学习。
 - 用户确认第 1 周 turtlesim P 控制内容已掌握，要求第一周文档与学习计划保持一致。
 - 已将第一周逐文件讲解文档统一命名为 `WEEK_01_ROS2_BASIC_COMMUNICATION.md`。
 - 第一周文档已补充本周目标、要学命令、练习题、知识问答、参考答案要点和通过标准。
