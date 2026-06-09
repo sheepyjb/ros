@@ -62,6 +62,12 @@
 - 建一个自定义消息包，定义简化版检测结果。
 - 用 launch 一次性启动多个节点。
 
+当前进度：
+
+- 第 2 周第 1 小课已进入 `ros2 launch` 和 YAML 参数文件。
+- 当前先在 `turtlesim_p_controller` 包内新增 `launch/` 和 `config/`，理解 launch/config 文件如何被安装和运行。
+- 后续再单独创建 `robot_bringup` 包和自定义接口包。
+
 ### 第 3 周：tf2、URDF 与 RViz
 
 目标：理解机器人系统中的坐标系。
@@ -236,12 +242,52 @@ P 控制的输出与误差成正比。距离误差越大，线速度越大；角
 ```bash
 ros2 run turtlesim turtlesim_node
 ros2 run turtlesim_p_controller turtle_goal_controller
+ros2 launch turtlesim_p_controller turtlesim_goal.launch.py
 ros2 topic list
 ros2 topic echo /turtle1/pose
 ros2 topic echo /turtle1/cmd_vel
 ros2 node list
 ros2 node info /turtle_goal_controller
 rqt_graph
+```
+
+## 第 2 周第 1 小课学习笔记：launch 与参数 YAML
+
+新增文件：
+
+- `src/turtlesim_p_controller/launch/turtlesim_goal.launch.py`
+- `src/turtlesim_p_controller/config/goal_controller.yaml`
+- `src/turtlesim_p_controller/WEEK_02_01_LAUNCH_AND_PARAMS.md`
+
+核心理解：
+
+```text
+launch 文件负责一次启动多个节点
+YAML 文件负责保存节点默认参数
+setup.py 的 data_files 负责把 launch/config 安装到 install/ 目录
+```
+
+运行方式：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select turtlesim_p_controller
+source install/setup.bash
+ros2 launch turtlesim_p_controller turtlesim_goal.launch.py
+```
+
+参数检查：
+
+```bash
+ros2 param get /turtle_goal_controller goal_x
+ros2 param get /turtle_goal_controller angular_gain
+```
+
+临时修改目标点：
+
+```bash
+ros2 param set /turtle_goal_controller goal_x 2.0
+ros2 param set /turtle_goal_controller goal_y 2.0
 ```
 
 ## 每周复盘模板

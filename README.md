@@ -46,6 +46,18 @@ ros2 run turtlesim turtlesim_node
 ros2 run turtlesim_p_controller turtle_goal_controller
 ```
 
+第 2 周开始，也可以用 launch 文件一次启动两个节点：
+
+```bash
+ros2 launch turtlesim_p_controller turtlesim_goal.launch.py
+```
+
+参数默认值在：
+
+```text
+src/turtlesim_p_controller/config/goal_controller.yaml
+```
+
 ## Git 使用
 
 查看状态：

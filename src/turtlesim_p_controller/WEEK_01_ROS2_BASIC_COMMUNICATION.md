@@ -2,6 +2,8 @@
 
 这份文档对应学习计划里的第 1 周：ROS 2 基础通信。它按 0 基础入门来讲解 `/home/sheepyjb/ros/src/turtlesim_p_controller`，并配套练习题、观察问题和知识问答。
 
+说明：本文保留第 1 周创建 package 时的核心结构和配置讲解。第 2 周后新增的 `launch/`、`config/` 和相关安装配置，见 `WEEK_02_01_LAUNCH_AND_PARAMS.md`。
+
 本周目标：
 
 ```text
@@ -54,7 +56,7 @@ node 节点负责订阅、计算、发布
 
 ## 一、整体目录结构
 
-当前包的源码结构：
+第 1 周创建完成时的核心源码结构：
 
 ```text
 turtlesim_p_controller/

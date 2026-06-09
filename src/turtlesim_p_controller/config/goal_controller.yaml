@@ -1,0 +1,9 @@
+turtle_goal_controller:
+  ros__parameters:
+    goal_x: 8.0
+    goal_y: 8.0
+    linear_gain: 1.2
+    angular_gain: 4.0
+    max_linear_speed: 2.0
+    max_angular_speed: 4.0
+    goal_tolerance: 0.15
