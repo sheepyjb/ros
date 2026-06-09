@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="250" viewBox="0 0 1100 250" role="img" aria-labelledby="title desc">
+  <title id="title">rqt_graph view of turtlesim and turtle_goal_controller</title>
+  <desc id="desc">The turtlesim node publishes /turtle1/pose to turtle_goal_controller, and turtle_goal_controller publishes /turtle1/cmd_vel back to turtlesim.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#111"/>
+    </marker>
+  </defs>
+  <rect width="1100" height="250" fill="#fff"/>
+  <ellipse cx="160" cy="95" rx="145" ry="45" fill="#fff" stroke="#111" stroke-width="4"/>
+  <text x="160" y="108" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="700">/turtlesim</text>
+  <ellipse cx="810" cy="95" rx="265" ry="45" fill="#fff" stroke="#111" stroke-width="4"/>
+  <text x="810" y="108" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="700">/turtle_goal_controller</text>
+  <line x1="305" y1="95" x2="540" y2="95" stroke="#111" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="425" y="72" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700">/turtle1/pose</text>
+  <path d="M 548 132 C 440 166, 295 158, 225 123" fill="none" stroke="#111" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="420" y="150" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700">/turtle1/cmd_vel</text>
+</svg>

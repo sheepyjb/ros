@@ -57,6 +57,7 @@ Key files:
 - 第一周文档已补充本周目标、要学命令、练习题、知识问答、参考答案要点和通过标准。
 - 约定后续第二周小课使用 `WEEK_02_01_...`、`WEEK_02_02_...` 命名。
 - 已按用户要求将第一周核心代码的逐行解释补进源码注释，涉及 `controller_math.py`、`turtle_goal_controller.py` 和 `test_controller_math.py`。
+- 已在第一周文档的 rqt_graph 练习中加入系统结构图 `assets/rqt_graph_turtlesim_controller.svg`，并为练习 1 到练习 10 补充对应参考答案。
 
 ### 2026-06-08
 

@@ -1289,6 +1289,10 @@ source /opt/ros/jazzy/setup.bash
 rqt_graph
 ```
 
+参考图：
+
+![rqt_graph 中 turtlesim 与 turtle_goal_controller 的话题关系](assets/rqt_graph_turtlesim_controller.svg)
+
 问题：
 
 1. 图里有哪些节点？
@@ -1329,7 +1333,79 @@ Package 'turtlesim_p_controller' not found
 - 你能主动补上 `source /home/sheepyjb/ros/install/setup.bash`。
 - 你能按“节点 -> 话题/服务 -> 参数 -> 环境 source”的顺序排查。
 
-## 十五、知识问答
+## 十五、练习题参考答案
+
+这一节用于做完练习后对答案。先自己回答，再看这里。
+
+### 练习 1 参考答案
+
+1. 启动的是 `turtlesim` package 里的 `turtlesim_node` 可执行程序。
+2. 节点名通常是 `/turtlesim`。
+3. 这个终端里运行着 turtlesim 进程，关掉或 `Ctrl+C` 后，仿真节点就退出，窗口和相关话题/服务也会消失。
+
+### 练习 2 参考答案
+
+1. 只启动 turtlesim 时，`ros2 node list` 应该看到 `/turtlesim`；如果控制器也启动了，还会看到 `/turtle_goal_controller`。
+2. `/turtlesim` 的 publishers 常见有 `/turtle1/pose`、`/turtle1/color_sensor`、`/rosout`、`/parameter_events`。
+3. `/turtlesim` 的 subscribers 里最关键的是 `/turtle1/cmd_vel`，它接收速度命令。
+4. `/turtlesim` 提供 `/reset`、`/clear`、`/spawn`、`/kill`、`/turtle1/set_pen` 等服务。
+5. `/turtlesim` 提供的 action 是 `/turtle1/rotate_absolute`。
+
+### 练习 3 参考答案
+
+1. `/turtle1/pose` 是 `/turtlesim` 发布的。
+2. `/turtle1/pose` 的消息类型是 `turtlesim/msg/Pose`。
+3. `x` 和 `y` 是乌龟在 turtlesim 窗口里的位置，`theta` 是乌龟当前朝向角，单位是弧度。
+4. 位姿会持续变化，需要连续发布，所以适合 topic；service 更适合一次请求一次响应。
+
+### 练习 4 参考答案
+
+1. `/turtle1/cmd_vel` 是 `/turtlesim` 订阅的。
+2. `linear.x` 控制乌龟沿自身朝向前进的速度。
+3. `angular.z` 控制乌龟绕 z 轴旋转，也就是左转或右转。
+4. `geometry_msgs/msg/Twist` 是 ROS 2 中表达速度的通用消息，包含线速度 `linear` 和角速度 `angular`。
+
+### 练习 5 参考答案
+
+1. 自己写的节点名是 `/turtle_goal_controller`。
+2. 它订阅 `/turtle1/pose`。
+3. 它发布 `/turtle1/cmd_vel`。
+4. 它要读位姿来知道当前状态和误差，再发速度命令改变乌龟运动，这就是闭环控制。
+
+### 练习 6 参考答案
+
+1. `linear_gain` 变大时，同样距离误差下线速度会更大，乌龟通常前进更快。
+2. `angular_gain` 太小时，转向修正慢，但线速度仍然让乌龟往前走，所以可能绕大圈甚至绕着目标转。
+3. ROS 2 参数有类型；`8` 是整数，`8.0` 是浮点数。代码默认值 `1.2` 是浮点数，所以要传浮点数。
+4. 乌龟已经到目标附近时，`distance_error < goal_tolerance`，控制器会发 0 速度；误差太小，所以调参数不明显。
+
+### 练习 7 参考答案
+
+1. `/reset` 是 `/turtlesim` 节点提供的服务。
+2. `ros2 service call` 是一次请求一次响应；`ros2 topic pub` 是向话题发布消息，接收方可以持续订阅。
+3. 如果 turtlesim 没有运行，`/reset` 没有服务端，命令会一直等待服务可用。
+4. 从同一起点比较参数，初始条件一致，轨迹差异主要来自参数变化，实验更公平。
+
+### 练习 8 参考答案
+
+1. turtlesim 提供 `/turtle1/rotate_absolute` action。
+2. service 适合短操作，一次请求一次响应；action 适合持续一段时间的任务，可以有反馈，也可以取消。
+3. 旋转到某个角度不是瞬间完成的，中间有执行过程，所以适合 action。
+
+### 练习 9 参考答案
+
+1. 图里至少有 `/turtlesim` 和 `/turtle_goal_controller` 两个节点。
+2. `/turtle1/pose` 从 `/turtlesim` 指向 `/turtle_goal_controller`，表示 turtlesim 发布位姿，控制器订阅位姿。
+3. `/turtle1/cmd_vel` 从 `/turtle_goal_controller` 指向 `/turtlesim`，表示控制器发布速度，turtlesim 执行速度命令。
+4. `rqt_graph` 能直接看到节点和话题连接关系，适合检查节点是否启动、话题方向是否正确、系统有没有断开。
+
+### 练习 10 参考答案
+
+1. 少执行了 `source /home/sheepyjb/ros/install/setup.bash`。
+2. `/opt/ros/jazzy/setup.bash` 让终端认识系统 ROS 2；`install/setup.bash` 让终端认识当前 workspace 里自己构建的包。
+3. 先检查 `turtlesim_node` 是否运行，再用 `ros2 service list` 看有没有 `/reset`。
+
+## 十六、知识问答
 
 这些问题不要求背诵，但要能用自己的话讲清楚。
 
@@ -1354,7 +1430,7 @@ Package 'turtlesim_p_controller' not found
 19. `ros2 topic echo` 用来查什么？
 20. `rqt_graph` 比命令行好在哪里？
 
-## 十六、参考答案要点
+## 十七、知识问答参考答案要点
 
 1. workspace 是工作空间，里面通常有 `src/`、`build/`、`install/`、`log/`。
 2. package 是功能包，一个 package 负责一类功能。
@@ -1377,7 +1453,7 @@ Package 'turtlesim_p_controller' not found
 19. `ros2 topic echo` 用来查看某个 topic 上正在传输的消息内容。
 20. `rqt_graph` 能把节点和 topic 的关系画成图，更容易看清系统结构。
 
-## 十七、第一周通过标准
+## 十八、第一周通过标准
 
 你可以进入下一周的标准：
 
