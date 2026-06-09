@@ -31,6 +31,106 @@ turtlesim
 用 P 控制让乌龟朝一个固定目标点运动
 ```
 
+## 第 1 周常用指令速查
+
+每开一个新终端，先执行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+```
+
+如果要运行自己写的 package，再执行：
+
+```bash
+source /home/sheepyjb/ros/install/setup.bash
+```
+
+构建当前 package：
+
+```bash
+cd /home/sheepyjb/ros
+colcon build --packages-select turtlesim_p_controller
+source install/setup.bash
+```
+
+启动 turtlesim：
+
+```bash
+ros2 run turtlesim turtlesim_node
+```
+
+启动自己的 P 控制器：
+
+```bash
+ros2 run turtlesim_p_controller turtle_goal_controller
+```
+
+查看节点：
+
+```bash
+ros2 node list
+ros2 node info /turtlesim
+ros2 node info /turtle_goal_controller
+```
+
+查看话题：
+
+```bash
+ros2 topic list
+ros2 topic echo /turtle1/pose
+ros2 topic echo /turtle1/cmd_vel
+ros2 topic hz /turtle1/pose
+```
+
+手动发布速度：
+
+```bash
+ros2 topic pub --once /turtle1/cmd_vel geometry_msgs/msg/Twist \
+  "{linear: {x: 2.0}, angular: {z: 0.0}}"
+```
+
+查看和调用服务：
+
+```bash
+ros2 service list
+ros2 service call /reset std_srvs/srv/Empty "{}"
+```
+
+查看和调用动作：
+
+```bash
+ros2 action list
+ros2 action info /turtle1/rotate_absolute
+ros2 action send_goal /turtle1/rotate_absolute turtlesim/action/RotateAbsolute "{theta: 1.57}"
+```
+
+查看和修改参数：
+
+```bash
+ros2 param list
+ros2 param get /turtle_goal_controller goal_x
+ros2 param set /turtle_goal_controller goal_x 2.0
+ros2 param set /turtle_goal_controller goal_y 8.0
+```
+
+查看系统结构图：
+
+```bash
+rqt_graph
+```
+
+运行测试：
+
+```bash
+PYTHONPATH=src/turtlesim_p_controller python3 -m unittest discover -s src/turtlesim_p_controller/test
+```
+
+常用排查顺序：
+
+```text
+source 是否执行 -> 节点是否存在 -> topic/service 是否存在 -> 参数是否正确 -> rqt_graph 看连接
+```
+
 先记住三层关系：
 
 ```text
