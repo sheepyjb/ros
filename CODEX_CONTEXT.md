@@ -56,6 +56,7 @@ Key files:
 - 已将第一周逐文件讲解文档统一命名为 `WEEK_01_ROS2_BASIC_COMMUNICATION.md`。
 - 第一周文档已补充本周目标、要学命令、练习题、知识问答、参考答案要点和通过标准。
 - 约定后续第二周小课使用 `WEEK_02_01_...`、`WEEK_02_02_...` 命名。
+- 已按用户要求将第一周核心代码的逐行解释补进源码注释，涉及 `controller_math.py`、`turtle_goal_controller.py` 和 `test_controller_math.py`。
 
 ### 2026-06-08
 
