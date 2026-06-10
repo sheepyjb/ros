@@ -9,7 +9,7 @@ Current goal:
 - 第 1 周 ROS 2 基础通信学习已完成。
 - 第 2 周按 3 节课推进。
 - 第 2 周第 1 小课 launch 文件与参数 YAML 已完成并已通过实操理解。
-- 下一步进入第 2 周第 2 小课：`robot_bringup` 包与工作空间组织。
+- 第 2 周第 2 小课 `robot_bringup` 包与工作空间组织的代码和讲义已创建，下一步带用户实操理解。
 
 Completed work:
 
@@ -34,6 +34,11 @@ Completed work:
 - 更新 `README.md` 和 `ros2_learning_notes.md`，加入 `ros2 launch` 运行方式。
 - 新增 `test_launch_assets.py`，测试 launch/config 文件存在并且 `setup.py` 包含安装声明。
 - 用户已通过实操理解 `source`、`colcon build`、`ros2 launch`、YAML 参数默认值、`ros2 param set` 临时参数、`/cmd_vel` 与 `/pose` 的区别，以及 `ros2 node list --no-daemon` 的排查价值。
+- 创建 ROS 2 Python 包 `src/robot_bringup`，作为启动编排包。
+- 创建 `src/robot_bringup/launch/turtlesim_goal.launch.py`，从 bringup 包统一启动 `turtlesim_node` 和 `turtle_goal_controller`。
+- 创建第 2 周第 2 小课讲义 `src/robot_bringup/WEEK_02_02_ROBOT_BRINGUP_PACKAGE.md`。
+- 新增 `src/robot_bringup/test/test_bringup_assets.py`，测试 bringup 包结构、launch 安装声明和运行依赖。
+- 更新 `README.md` 和 `ros2_learning_notes.md`，加入 `robot_bringup` 推荐启动入口。
 
 Important decisions:
 
@@ -45,6 +50,7 @@ Important decisions:
 - 第 2 周第 1 小课先在原 `turtlesim_p_controller` 包内学习 launch/config，暂不新建 `robot_bringup`；后续小课再迁移到 bringup 包，降低概念密度。
 - launch/config 是运行时资产，必须通过 `setup.py` 的 `data_files` 安装到 `install/<package>/share/<package>/`，否则 `ros2 launch` 找不到。
 - 第 2 周调整为 3 节课：第 1 节 launch 与参数 YAML；第 2 节 `robot_bringup` 与工作空间组织；第 3 节自定义接口与综合练习。
+- `robot_bringup` 当前不放控制算法和参数 YAML，只负责启动编排；控制器默认参数继续归属 `turtlesim_p_controller/config/goal_controller.yaml`。
 
 Verification:
 
@@ -54,15 +60,16 @@ Verification:
 - 已运行 `colcon build --packages-select turtlesim_p_controller`，构建通过。
 - 已运行 `ros2 pkg executables turtlesim_p_controller`，确认入口为 `turtle_goal_controller`。
 - 已运行 `ros2 launch turtlesim_p_controller turtlesim_goal.launch.py --show-args`，在 `ROS_LOG_DIR=/tmp/ros2_launch_logs` 下确认 launch 文件可被加载。
+- 已运行 `colcon build --packages-select turtlesim_p_controller robot_bringup`，两个包构建通过。
+- 已运行 `ros2 launch robot_bringup turtlesim_goal.launch.py --show-args`，在 `ROS_LOG_DIR=/tmp/ros2_launch_logs` 下确认 bringup launch 文件可被加载。
 - 已实际运行 turtlesim 图形窗口和控制器节点。
 - 已使用 `/reset` 服务验证 service 调用。
 - 已使用 rqt_graph 观察 `/turtlesim` 和 `/turtle_goal_controller` 的 topic 连接关系。
 
 Remaining tasks:
 
-- 开始第 2 周第 2 小课，建议命名为 `WEEK_02_02_ROBOT_BRINGUP_PACKAGE.md`。
-- 创建 `robot_bringup` 包，学习 bringup 包的职责。
-- 将 turtlesim 启动文件作为练习迁移或复制到 `robot_bringup`，理解功能包与启动编排包的区别。
+- 带用户实操第 2 周第 2 小课，重点理解 `turtlesim_p_controller` 与 `robot_bringup` 的职责边界。
+- 让用户运行 `ros2 launch robot_bringup turtlesim_goal.launch.py` 并观察节点、topic 和安装目录。
 - 第 2 周第 3 小课再创建自定义接口包，并做综合练习。
 
 Key files:
@@ -78,8 +85,29 @@ Key files:
 - `src/turtlesim_p_controller/turtlesim_p_controller/turtle_goal_controller.py`
 - `src/turtlesim_p_controller/test/test_controller_math.py`
 - `src/turtlesim_p_controller/test/test_launch_assets.py`
+- `src/robot_bringup/WEEK_02_02_ROBOT_BRINGUP_PACKAGE.md`
+- `src/robot_bringup/launch/turtlesim_goal.launch.py`
+- `src/robot_bringup/package.xml`
+- `src/robot_bringup/setup.py`
+- `src/robot_bringup/test/test_bringup_assets.py`
 
 ## Session Notes
+
+### 2026-06-10
+
+- Progress/result checkpoint:
+  - 第 2 周第 2 小课材料已创建：`robot_bringup` 包、bringup launch、讲义和资产测试。
+  - `robot_bringup` 是启动编排包，不新增控制节点，不复制控制器参数；它通过 `get_package_share_directory("turtlesim_p_controller")` 引用控制器包的 YAML。
+  - 新的推荐启动入口是 `ros2 launch robot_bringup turtlesim_goal.launch.py`。
+  - 第一次尝试 `python3 -m unittest discover -s src` 没发现测试，已将讲义中的全部测试命令改为分别发现两个 test 目录。
+- Verification:
+  - `PYTHONPATH=src/turtlesim_p_controller python3 -m unittest discover -s src/turtlesim_p_controller/test` 通过。
+  - `python3 -m unittest discover -s src/robot_bringup/test` 通过。
+  - `python3 -m compileall src/turtlesim_p_controller/turtlesim_p_controller src/turtlesim_p_controller/launch src/turtlesim_p_controller/test src/robot_bringup` 通过。
+  - `source /opt/ros/jazzy/setup.bash && colcon build --packages-select turtlesim_p_controller robot_bringup` 通过。
+  - 设置 `ROS_LOG_DIR=/tmp/ros2_launch_logs` 后，`ros2 launch robot_bringup turtlesim_goal.launch.py --show-args` 通过。
+- Next:
+  - 带用户运行并理解 `robot_bringup`，尤其是 `src/build/install/log` 与功能包/启动包边界。
 
 ### 2026-06-10
 

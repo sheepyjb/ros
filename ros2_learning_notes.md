@@ -66,7 +66,7 @@
 
 - 第 2 周按 3 节课推进。
 - 第 1 节 `ros2 launch` 和 YAML 参数文件已完成并通过实操理解。
-- 第 2 节进入 `robot_bringup` 包与工作空间组织。
+- 第 2 节进入 `robot_bringup` 包与工作空间组织，新增独立启动编排包。
 - 第 3 节再做自定义接口与综合练习。
 
 ### 第 3 周：tf2、URDF 与 RViz
@@ -289,6 +289,47 @@ ros2 param get /turtle_goal_controller angular_gain
 ```bash
 ros2 param set /turtle_goal_controller goal_x 2.0
 ros2 param set /turtle_goal_controller goal_y 2.0
+```
+
+## 第 2 周第 2 小课学习笔记：robot_bringup 与工作空间组织
+
+新增 package：
+
+```text
+src/robot_bringup
+```
+
+核心理解：
+
+```text
+turtlesim_p_controller 是功能包
+robot_bringup 是启动编排包
+src/ 放源码
+build/ 放构建中间文件
+install/ 放运行时安装结果
+log/ 放构建日志
+```
+
+推荐启动入口：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd /home/sheepyjb/ros
+colcon build --packages-select turtlesim_p_controller robot_bringup
+source install/setup.bash
+ros2 launch robot_bringup turtlesim_goal.launch.py
+```
+
+检查节点：
+
+```bash
+ros2 node list --no-daemon
+```
+
+检查 bringup 的 launch 文件是否安装：
+
+```bash
+find install/robot_bringup/share/robot_bringup -maxdepth 3 -type f | sort
 ```
 
 ## 每周复盘模板

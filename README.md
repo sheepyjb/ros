@@ -52,6 +52,14 @@ ros2 run turtlesim_p_controller turtle_goal_controller
 ros2 launch turtlesim_p_controller turtlesim_goal.launch.py
 ```
 
+创建 `robot_bringup` 包后，推荐用启动编排包作为系统入口：
+
+```bash
+colcon build --packages-select turtlesim_p_controller robot_bringup
+source install/setup.bash
+ros2 launch robot_bringup turtlesim_goal.launch.py
+```
+
 参数默认值在：
 
 ```text
