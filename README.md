@@ -55,9 +55,15 @@ ros2 launch turtlesim_p_controller turtlesim_goal.launch.py
 创建 `robot_bringup` 包后，推荐用启动编排包作为系统入口：
 
 ```bash
-colcon build --packages-select turtlesim_p_controller robot_bringup
+colcon build --packages-select robot_interfaces turtlesim_p_controller robot_bringup
 source install/setup.bash
 ros2 launch robot_bringup turtlesim_goal.launch.py
+```
+
+第 2 周第 3 节加入自定义服务后，可以用它修改目标点：
+
+```bash
+ros2 service call /set_goal robot_interfaces/srv/SetGoal "{x: 2.0, y: 8.0}"
 ```
 
 参数默认值在：

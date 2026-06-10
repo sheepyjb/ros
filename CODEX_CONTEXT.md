@@ -10,6 +10,7 @@ Current goal:
 - 第 2 周按 3 节课推进。
 - 第 2 周第 1 小课 launch 文件与参数 YAML 已完成并已通过实操理解。
 - 第 2 周第 2 小课 `robot_bringup` 包与工作空间组织的代码和讲义已创建，下一步带用户实操理解。
+- 第 2 周第 3 小课自定义接口与综合练习已跑通，当前准备提交。
 
 Completed work:
 
@@ -39,6 +40,13 @@ Completed work:
 - 创建第 2 周第 2 小课讲义 `src/robot_bringup/WEEK_02_02_ROBOT_BRINGUP_PACKAGE.md`。
 - 新增 `src/robot_bringup/test/test_bringup_assets.py`，测试 bringup 包结构、launch 安装声明和运行依赖。
 - 更新 `README.md` 和 `ros2_learning_notes.md`，加入 `robot_bringup` 推荐启动入口。
+- 创建 ROS 2 接口包 `src/robot_interfaces`，定义 `TargetDetection.msg` 和 `SetGoal.srv`。
+- 创建第 2 周第 3 小课讲义 `src/robot_interfaces/WEEK_02_03_CUSTOM_INTERFACES_AND_REVIEW.md`。
+- 新增 `src/robot_interfaces/test/test_interface_assets.py`，测试接口包结构、msg/srv 字段和依赖声明。
+- 新增 `goal_service.py`，提供 `SetGoal` 服务复用的目标点校验逻辑。
+- 更新 `turtle_goal_controller.py`，新增 `/set_goal` 自定义服务，可运行时设置目标点。
+- 更新 `turtlesim_p_controller/package.xml`，声明对 `robot_interfaces` 的依赖。
+- 用户已实操跑通 `/set_goal` 自定义服务，服务返回 `success=True`。
 
 Important decisions:
 
@@ -51,6 +59,8 @@ Important decisions:
 - launch/config 是运行时资产，必须通过 `setup.py` 的 `data_files` 安装到 `install/<package>/share/<package>/`，否则 `ros2 launch` 找不到。
 - 第 2 周调整为 3 节课：第 1 节 launch 与参数 YAML；第 2 节 `robot_bringup` 与工作空间组织；第 3 节自定义接口与综合练习。
 - `robot_bringup` 当前不放控制算法和参数 YAML，只负责启动编排；控制器默认参数继续归属 `turtlesim_p_controller/config/goal_controller.yaml`。
+- `robot_interfaces` 是纯接口包，使用 `ament_cmake` 和 `rosidl_generate_interfaces`；不放节点、不放 launch。
+- 第 3 节让 `SetGoal.srv` 真正接入控制器；`TargetDetection.msg` 暂时用 CLI 模拟发布，为后续 YOLO 接入做概念准备。
 
 Verification:
 
@@ -62,15 +72,16 @@ Verification:
 - 已运行 `ros2 launch turtlesim_p_controller turtlesim_goal.launch.py --show-args`，在 `ROS_LOG_DIR=/tmp/ros2_launch_logs` 下确认 launch 文件可被加载。
 - 已运行 `colcon build --packages-select turtlesim_p_controller robot_bringup`，两个包构建通过。
 - 已运行 `ros2 launch robot_bringup turtlesim_goal.launch.py --show-args`，在 `ROS_LOG_DIR=/tmp/ros2_launch_logs` 下确认 bringup launch 文件可被加载。
+- 已运行 `colcon build --packages-select robot_interfaces turtlesim_p_controller robot_bringup`，三个包构建通过。
+- 已运行 `ros2 interface show robot_interfaces/msg/TargetDetection` 和 `ros2 interface show robot_interfaces/srv/SetGoal`，确认自定义接口可发现。
 - 已实际运行 turtlesim 图形窗口和控制器节点。
 - 已使用 `/reset` 服务验证 service 调用。
 - 已使用 rqt_graph 观察 `/turtlesim` 和 `/turtle_goal_controller` 的 topic 连接关系。
 
 Remaining tasks:
 
-- 带用户实操第 2 周第 2 小课，重点理解 `turtlesim_p_controller` 与 `robot_bringup` 的职责边界。
-- 让用户运行 `ros2 launch robot_bringup turtlesim_goal.launch.py` 并观察节点、topic 和安装目录。
-- 第 2 周第 3 小课再创建自定义接口包，并做综合练习。
+- 提交第 2 周第 3 小课改动。
+- 提交后可进入第 2 周复盘，确认 `msg`、`srv`、接口包、功能包、启动包的边界是否掌握。
 
 Key files:
 
@@ -90,8 +101,33 @@ Key files:
 - `src/robot_bringup/package.xml`
 - `src/robot_bringup/setup.py`
 - `src/robot_bringup/test/test_bringup_assets.py`
+- `src/robot_interfaces/WEEK_02_03_CUSTOM_INTERFACES_AND_REVIEW.md`
+- `src/robot_interfaces/msg/TargetDetection.msg`
+- `src/robot_interfaces/srv/SetGoal.srv`
+- `src/robot_interfaces/CMakeLists.txt`
+- `src/robot_interfaces/package.xml`
+- `src/turtlesim_p_controller/turtlesim_p_controller/goal_service.py`
 
 ## Session Notes
+
+### 2026-06-10
+
+- Progress/result checkpoint:
+  - 第 2 周第 3 小课材料已创建：`robot_interfaces` 接口包、自定义 msg/srv、控制器自定义服务、讲义和资产测试。
+  - `TargetDetection.msg` 表示简化检测结果，当前用于 CLI 模拟发布，后续可服务于 YOLO 接入。
+  - `SetGoal.srv` 已接入 `turtle_goal_controller`，当前服务名为 `/set_goal`，用于运行时更新目标点。
+  - 用户实操确认：`ros2 service call /set_goal robot_interfaces/srv/SetGoal "{x: 2.0, y: 8.0}"` 返回 `success=True`。
+  - 控制器新增 `goal_service.py`，将目标点坐标校验拆成纯 Python 函数并测试。
+- Verification:
+  - `python3 -m unittest discover -s src/robot_interfaces/test` 通过。
+  - `PYTHONPATH=src/turtlesim_p_controller python3 -m unittest discover -s src/turtlesim_p_controller/test` 通过。
+  - `python3 -m unittest discover -s src/robot_bringup/test` 通过。
+  - `python3 -m compileall src/turtlesim_p_controller/turtlesim_p_controller src/turtlesim_p_controller/launch src/turtlesim_p_controller/test src/robot_bringup src/robot_interfaces` 通过。
+  - `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_interfaces turtlesim_p_controller robot_bringup` 通过。
+  - `ros2 interface show robot_interfaces/msg/TargetDetection` 和 `ros2 interface show robot_interfaces/srv/SetGoal` 可显示接口定义。
+  - 设置 `ROS_LOG_DIR=/tmp/ros2_launch_logs` 后，`ros2 launch robot_bringup turtlesim_goal.launch.py --show-args` 通过。
+- Next:
+  - 带用户实操第 3 节；确认服务调用能让乌龟朝新目标点运动后再提交。
 
 ### 2026-06-10
 

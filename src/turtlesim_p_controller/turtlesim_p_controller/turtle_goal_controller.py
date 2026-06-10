@@ -1,6 +1,8 @@
 import rclpy  # ROS 2 Python 客户端库，写 Python 节点必须用它。
 from geometry_msgs.msg import Twist  # Twist 是速度消息，用来控制乌龟运动。
 from rclpy.node import Node  # Node 是 ROS 2 Python 节点的基类。
+from rclpy.parameter import Parameter  # Parameter 用来在服务回调里更新节点参数。
+from robot_interfaces.srv import SetGoal  # 自定义服务，用来设置新的目标点。
 from turtlesim.msg import Pose  # Pose 是 turtlesim 发布的乌龟位姿消息。
 
 from turtlesim_p_controller.controller_math import (
@@ -8,6 +10,7 @@ from turtlesim_p_controller.controller_math import (
     TurtlePose,  # 乌龟位姿数据类。
     compute_velocity_command,  # 根据位姿和参数计算速度命令。
 )
+from turtlesim_p_controller.goal_service import validate_goal_coordinates
 
 
 class TurtleGoalController(Node):
@@ -25,6 +28,7 @@ class TurtleGoalController(Node):
 
         self._cmd_vel_pub = self.create_publisher(Twist, "/turtle1/cmd_vel", 10)
         self.create_subscription(Pose, "/turtle1/pose", self._on_pose, 10)
+        self.create_service(SetGoal, "set_goal", self._on_set_goal)
 
     def _on_pose(self, msg: Pose) -> None:
         """每收到一次 /turtle1/pose，就计算并发布一次速度命令。"""
@@ -50,6 +54,24 @@ class TurtleGoalController(Node):
             max_angular_speed=self.get_parameter("max_angular_speed").value,
             goal_tolerance=self.get_parameter("goal_tolerance").value,
         )
+
+    def _on_set_goal(self, request: SetGoal.Request, response: SetGoal.Response):
+        """处理自定义服务请求，运行时更新目标点参数。"""
+
+        is_valid, message = validate_goal_coordinates(request.x, request.y)
+        response.success = is_valid
+        response.message = message
+        if not is_valid:
+            return response
+
+        self.set_parameters(
+            [
+                Parameter("goal_x", Parameter.Type.DOUBLE, request.x),
+                Parameter("goal_y", Parameter.Type.DOUBLE, request.y),
+            ]
+        )
+        self.get_logger().info(message)
+        return response
 
 
 def main(args=None):

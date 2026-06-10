@@ -67,7 +67,7 @@
 - 第 2 周按 3 节课推进。
 - 第 1 节 `ros2 launch` 和 YAML 参数文件已完成并通过实操理解。
 - 第 2 节进入 `robot_bringup` 包与工作空间组织，新增独立启动编排包。
-- 第 3 节再做自定义接口与综合练习。
+- 第 3 节进入 `robot_interfaces` 自定义接口与综合练习，定义 `TargetDetection.msg` 和 `SetGoal.srv`。
 
 ### 第 3 周：tf2、URDF 与 RViz
 
@@ -330,6 +330,63 @@ ros2 node list --no-daemon
 
 ```bash
 find install/robot_bringup/share/robot_bringup -maxdepth 3 -type f | sort
+```
+
+## 第 2 周第 3 小课学习笔记：自定义接口与综合练习
+
+新增 package：
+
+```text
+src/robot_interfaces
+```
+
+核心理解：
+
+```text
+robot_interfaces 是接口包
+turtlesim_p_controller 是功能包
+robot_bringup 是启动编排包
+msg 用于 topic 消息
+srv 用于 service 请求和响应
+```
+
+构建三个包：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd /home/sheepyjb/ros
+colcon build --packages-select robot_interfaces turtlesim_p_controller robot_bringup
+source install/setup.bash
+```
+
+查看自定义接口：
+
+```bash
+ros2 interface show robot_interfaces/msg/TargetDetection
+ros2 interface show robot_interfaces/srv/SetGoal
+```
+
+模拟发布检测结果：
+
+```bash
+ros2 topic pub --once /target_detection robot_interfaces/msg/TargetDetection \
+  "{label: 'person', confidence: 0.92, center_x: 0.5, center_y: 0.4, width: 0.2, height: 0.3, is_tracking: true}"
+```
+
+用自定义服务修改目标点：
+
+```bash
+ros2 launch robot_bringup turtlesim_goal.launch.py
+ros2 service list | grep set_goal
+ros2 service call /set_goal robot_interfaces/srv/SetGoal "{x: 2.0, y: 8.0}"
+```
+
+注意：
+
+```text
+ros2 interface show 能看到接口，只说明 robot_interfaces 构建好了。
+ros2 service list 能看到 /set_goal，才说明控制器节点真的启动了这个服务。
+如果 service call 一直 waiting for service，需要重启 launch。
 ```
 
 ## 每周复盘模板
