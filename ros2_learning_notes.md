@@ -64,9 +64,10 @@
 
 当前进度：
 
-- 第 2 周第 1 小课已进入 `ros2 launch` 和 YAML 参数文件。
-- 当前先在 `turtlesim_p_controller` 包内新增 `launch/` 和 `config/`，理解 launch/config 文件如何被安装和运行。
-- 后续再单独创建 `robot_bringup` 包和自定义接口包。
+- 第 2 周按 3 节课推进。
+- 第 1 节 `ros2 launch` 和 YAML 参数文件已完成并通过实操理解。
+- 第 2 节进入 `robot_bringup` 包与工作空间组织。
+- 第 3 节再做自定义接口与综合练习。
 
 ### 第 3 周：tf2、URDF 与 RViz
 

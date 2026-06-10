@@ -2,13 +2,14 @@
 
 ## Latest Snapshot
 
-Date: 2026-06-09
+Date: 2026-06-10
 
 Current goal:
 
 - 第 1 周 ROS 2 基础通信学习已完成。
-- 第 2 周第 1 小课 launch 文件与参数 YAML 已完成。
-- 下一步进入第 2 周第 2 小课：创建 `robot_bringup` 包，学习把启动文件从功能包中逐步迁移到 bringup 包。
+- 第 2 周按 3 节课推进。
+- 第 2 周第 1 小课 launch 文件与参数 YAML 已完成并已通过实操理解。
+- 下一步进入第 2 周第 2 小课：`robot_bringup` 包与工作空间组织。
 
 Completed work:
 
@@ -32,6 +33,7 @@ Completed work:
 - 创建第 2 周第 1 小课讲义 `src/turtlesim_p_controller/WEEK_02_01_LAUNCH_AND_PARAMS.md`。
 - 更新 `README.md` 和 `ros2_learning_notes.md`，加入 `ros2 launch` 运行方式。
 - 新增 `test_launch_assets.py`，测试 launch/config 文件存在并且 `setup.py` 包含安装声明。
+- 用户已通过实操理解 `source`、`colcon build`、`ros2 launch`、YAML 参数默认值、`ros2 param set` 临时参数、`/cmd_vel` 与 `/pose` 的区别，以及 `ros2 node list --no-daemon` 的排查价值。
 
 Important decisions:
 
@@ -42,6 +44,7 @@ Important decisions:
 - 后续每一课都要配套练习题、观察问题、知识问答、参考答案和验收标准。
 - 第 2 周第 1 小课先在原 `turtlesim_p_controller` 包内学习 launch/config，暂不新建 `robot_bringup`；后续小课再迁移到 bringup 包，降低概念密度。
 - launch/config 是运行时资产，必须通过 `setup.py` 的 `data_files` 安装到 `install/<package>/share/<package>/`，否则 `ros2 launch` 找不到。
+- 第 2 周调整为 3 节课：第 1 节 launch 与参数 YAML；第 2 节 `robot_bringup` 与工作空间组织；第 3 节自定义接口与综合练习。
 
 Verification:
 
@@ -60,7 +63,7 @@ Remaining tasks:
 - 开始第 2 周第 2 小课，建议命名为 `WEEK_02_02_ROBOT_BRINGUP_PACKAGE.md`。
 - 创建 `robot_bringup` 包，学习 bringup 包的职责。
 - 将 turtlesim 启动文件作为练习迁移或复制到 `robot_bringup`，理解功能包与启动编排包的区别。
-- 后续创建自定义接口包。
+- 第 2 周第 3 小课再创建自定义接口包，并做综合练习。
 
 Key files:
 
@@ -77,6 +80,22 @@ Key files:
 - `src/turtlesim_p_controller/test/test_launch_assets.py`
 
 ## Session Notes
+
+### 2026-06-10
+
+- Progress/result checkpoint:
+  - 用户确认第 2 周第 1 小课已搞懂，可以进入第 2 小课。
+  - 第 2 周课程规划调整为 3 节：launch/参数、`robot_bringup`/工作空间组织、自定义接口/综合练习。
+  - 第 1 节学习中重点澄清：
+    - `source /opt/ros/jazzy/setup.bash` 让终端认识系统 ROS 2。
+    - `colcon build --packages-select turtlesim_p_controller` 构建当前包并生成 `install/`。
+    - `source install/setup.bash` 让终端认识当前 workspace 构建出的包。
+    - `ros2 param set` 只改运行中节点的内存参数，不写回 YAML。
+    - `ros2 topic echo /turtle1/cmd_vel --once` 只读取执行后收到的第一条速度命令，不代表历史速度。
+    - `/cmd_vel` 是控制命令，`/pose` 中的 velocity 是 turtlesim 当前状态。
+    - `ros2 node list --no-daemon` 更适合排查 daemon 缓存或节点发现延迟。
+- Next:
+  - 开始 `WEEK_02_02_ROBOT_BRINGUP_PACKAGE.md`，创建并讲解 `robot_bringup` 包。
 
 ### 2026-06-09
 
