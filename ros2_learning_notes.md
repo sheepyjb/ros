@@ -67,7 +67,8 @@
 - 第 2 周按 3 节课推进。
 - 第 1 节 `ros2 launch` 和 YAML 参数文件已完成并通过实操理解。
 - 第 2 节进入 `robot_bringup` 包与工作空间组织，新增独立启动编排包。
-- 第 3 节进入 `robot_interfaces` 自定义接口与综合练习，定义 `TargetDetection.msg` 和 `SetGoal.srv`。
+- 第 3 节 `robot_interfaces` 自定义接口与综合练习已完成，定义 `TargetDetection.msg` 和 `SetGoal.srv`，并用 `/set_goal` 服务跑通目标点更新。
+- 第 2 周已完成，下一步进入第 3 周 tf2、URDF 与 RViz。
 
 ### 第 3 周：tf2、URDF 与 RViz
 

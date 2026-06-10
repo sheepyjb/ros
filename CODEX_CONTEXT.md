@@ -7,10 +7,8 @@ Date: 2026-06-10
 Current goal:
 
 - 第 1 周 ROS 2 基础通信学习已完成。
-- 第 2 周按 3 节课推进。
-- 第 2 周第 1 小课 launch 文件与参数 YAML 已完成并已通过实操理解。
-- 第 2 周第 2 小课 `robot_bringup` 包与工作空间组织的代码和讲义已创建，下一步带用户实操理解。
-- 第 2 周第 3 小课自定义接口与综合练习已跑通，当前准备提交。
+- 第 2 周工作空间、包和接口学习已完成。
+- 下一步进入第 3 周第 1 小课：tf2 与 ROS 2 坐标系入门。
 
 Completed work:
 
@@ -47,6 +45,7 @@ Completed work:
 - 更新 `turtle_goal_controller.py`，新增 `/set_goal` 自定义服务，可运行时设置目标点。
 - 更新 `turtlesim_p_controller/package.xml`，声明对 `robot_interfaces` 的依赖。
 - 用户已实操跑通 `/set_goal` 自定义服务，服务返回 `success=True`。
+- 用户确认第 2 周第 3 小课已理解；第 2 周三节课均已完成。
 
 Important decisions:
 
@@ -80,8 +79,9 @@ Verification:
 
 Remaining tasks:
 
-- 提交第 2 周第 3 小课改动。
-- 提交后可进入第 2 周复盘，确认 `msg`、`srv`、接口包、功能包、启动包的边界是否掌握。
+- 开始第 3 周第 1 小课，建议命名为 `WEEK_03_01_TF2_FRAMES.md`。
+- 学习 `map`、`odom`、`base_link` 等 frame 概念。
+- 后续创建 `robot_description` 包，逐步进入 URDF / Xacro 和 RViz。
 
 Key files:
 
@@ -109,6 +109,14 @@ Key files:
 - `src/turtlesim_p_controller/turtlesim_p_controller/goal_service.py`
 
 ## Session Notes
+
+### 2026-06-10
+
+- Progress/result checkpoint:
+  - 用户确认第 2 周第 3 小课已搞懂。
+  - 第 2 周学习完成，已覆盖 launch/YAML、`robot_bringup`、`robot_interfaces`、自定义 msg/srv、三类 package 分工。
+- Next:
+  - 进入第 3 周：tf2、URDF 与 RViz。
 
 ### 2026-06-10
 
