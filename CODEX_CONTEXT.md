@@ -8,7 +8,7 @@ Current goal:
 
 - 第 1 周 ROS 2 基础通信学习已完成。
 - 第 2 周工作空间、包和接口学习已完成。
-- 下一步进入第 3 周第 1 小课：tf2 与 ROS 2 坐标系入门。
+- 第 3 周第 1 小课：tf2 与 ROS 2 坐标系入门材料已创建，下一步带用户实操验证和答疑。
 
 Completed work:
 
@@ -46,6 +46,17 @@ Completed work:
 - 更新 `turtlesim_p_controller/package.xml`，声明对 `robot_interfaces` 的依赖。
 - 用户已实操跑通 `/set_goal` 自定义服务，服务返回 `success=True`。
 - 用户确认第 2 周第 3 小课已理解；第 2 周三节课均已完成。
+- 创建 ROS 2 Python 包 `src/tf2_frame_demo`，用于第 3 周第 1 小课 tf2 坐标系入门。
+- 新增 `frame_math.py`，提供 yaw/四元数转换、圆周运动位姿和角度归一化的纯 Python 数学逻辑。
+- 新增 `dynamic_frame_broadcaster.py`，发布 `odom -> base_link` 动态 TF。
+- 新增 `frame_listener.py`，查询 `map -> camera_link` 并打印位置和 yaw。
+- 修复 `dynamic_frame_broadcaster.py` 和 `frame_listener.py` 的 Ctrl-C 退出路径，避免重复 `rclpy.shutdown()` 导致 traceback。
+- 新增 `launch/tf2_demo.launch.py`，一次启动 `map -> odom`、`odom -> base_link`、`base_link -> camera_link` 这棵 TF 树。
+- 创建第 3 周第 1 小课讲义 `src/tf2_frame_demo/WEEK_03_01_TF2_FRAMES.md`。
+- 第 3 周第 1 小课已正式加入 RViz2 可视化观察步骤：`Fixed Frame = map`，添加 `TF` display，观察坐标轴、frame 名称和黄色父子关系线。
+- 第 3 周第 1 小课核心代码已补充教学注释，覆盖 `frame_math.py`、`dynamic_frame_broadcaster.py`、`frame_listener.py` 和 `tf2_demo.launch.py`。
+- 新增 `test_frame_math.py`、`test_tf2_frame_demo_assets.py` 和 `test_node_shutdown.py`，测试数学逻辑、package/launch 资产和 Ctrl-C 退出路径。
+- 更新 `README.md` 和 `ros2_learning_notes.md`，加入第 3 周第 1 小课入口。
 
 Important decisions:
 
@@ -60,6 +71,10 @@ Important decisions:
 - `robot_bringup` 当前不放控制算法和参数 YAML，只负责启动编排；控制器默认参数继续归属 `turtlesim_p_controller/config/goal_controller.yaml`。
 - `robot_interfaces` 是纯接口包，使用 `ament_cmake` 和 `rosidl_generate_interfaces`；不放节点、不放 launch。
 - 第 3 节让 `SetGoal.srv` 真正接入控制器；`TargetDetection.msg` 暂时用 CLI 模拟发布，为后续 YOLO 接入做概念准备。
+- 第 3 周第 1 小课先单独创建 `tf2_frame_demo`，不把 tf2 示例塞进 `turtlesim_p_controller`；原因是 tf2 是系统级坐标关系，独立包更适合衔接后续 `robot_description`、URDF 和 RViz。
+- 本课 TF 树固定为 `map -> odom -> base_link -> camera_link`，其中 `map -> odom` 和 `base_link -> camera_link` 是静态 transform，`odom -> base_link` 是动态 transform。
+- 本课暂不引入 URDF；先用 `static_transform_publisher`、`TransformBroadcaster`、`TransformListener`、`tf2_echo` 和 RViz2 的 TF display 理解 frame/transform/TF 树。
+- 第 1 小课的 RViz2 配置只用于临时观察，关闭时选择 `Discard`；正式可复用配置后续保存到 `robot_description/rviz/display.rviz`。
 
 Verification:
 
@@ -73,14 +88,22 @@ Verification:
 - 已运行 `ros2 launch robot_bringup turtlesim_goal.launch.py --show-args`，在 `ROS_LOG_DIR=/tmp/ros2_launch_logs` 下确认 bringup launch 文件可被加载。
 - 已运行 `colcon build --packages-select robot_interfaces turtlesim_p_controller robot_bringup`，三个包构建通过。
 - 已运行 `ros2 interface show robot_interfaces/msg/TargetDetection` 和 `ros2 interface show robot_interfaces/srv/SetGoal`，确认自定义接口可发现。
+- 已运行 `source /opt/ros/jazzy/setup.bash && PYTHONPATH=src/tf2_frame_demo:$PYTHONPATH python3 -m unittest discover -s src/tf2_frame_demo/test`，10 个测试通过。
+- 已运行 `python3 -m compileall src/tf2_frame_demo/tf2_frame_demo src/tf2_frame_demo/launch src/tf2_frame_demo/test`，语法检查通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select tf2_frame_demo`，构建通过。
+- 已运行 `ros2 pkg executables tf2_frame_demo`，确认入口为 `dynamic_frame_broadcaster` 和 `frame_listener`。
+- 已运行 `ros2 launch tf2_frame_demo tf2_demo.launch.py --show-args`，在 `ROS_LOG_DIR=/tmp/ros2_launch_logs` 下确认 launch 文件可被加载。
+- 已用 `timeout 8s ros2 launch tf2_frame_demo tf2_demo.launch.py` 短时启动验证，listener 打印了连续变化的 `map -> camera_link`。
+- 已用 `timeout -s INT 7s ros2 launch tf2_frame_demo tf2_demo.launch.py` 模拟 Ctrl-C，确认两个 Python 节点 clean exit。
 - 已实际运行 turtlesim 图形窗口和控制器节点。
 - 已使用 `/reset` 服务验证 service 调用。
 - 已使用 rqt_graph 观察 `/turtlesim` 和 `/turtle_goal_controller` 的 topic 连接关系。
 
 Remaining tasks:
 
-- 开始第 3 周第 1 小课，建议命名为 `WEEK_03_01_TF2_FRAMES.md`。
-- 学习 `map`、`odom`、`base_link` 等 frame 概念。
+- 带用户实操第 3 周第 1 小课，重点确认 `frame`、`transform`、`header.frame_id`、`child_frame_id`、`/tf`、`/tf_static`、`tf2_echo`。
+- 第 3 周小课规划调整为 3 节：第 1 节 tf2/RViz2 坐标系观察；第 2 节合并 `robot_description`、URDF、轮子、摄像头和雷达 frame；第 3 节 Xacro、RViz 配置和综合启动。
+- 用户确认理解后进入第 3 周第 2 小课：创建 `robot_description` 包，逐步进入 URDF / Xacro 和 RViz。
 - 后续创建 `robot_description` 包，逐步进入 URDF / Xacro 和 RViz。
 
 Key files:
@@ -107,8 +130,41 @@ Key files:
 - `src/robot_interfaces/CMakeLists.txt`
 - `src/robot_interfaces/package.xml`
 - `src/turtlesim_p_controller/turtlesim_p_controller/goal_service.py`
+- `src/tf2_frame_demo/WEEK_03_01_TF2_FRAMES.md`
+- `src/tf2_frame_demo/launch/tf2_demo.launch.py`
+- `src/tf2_frame_demo/tf2_frame_demo/frame_math.py`
+- `src/tf2_frame_demo/tf2_frame_demo/dynamic_frame_broadcaster.py`
+- `src/tf2_frame_demo/tf2_frame_demo/frame_listener.py`
+- `src/tf2_frame_demo/test/test_frame_math.py`
+- `src/tf2_frame_demo/test/test_tf2_frame_demo_assets.py`
+- `src/tf2_frame_demo/test/test_node_shutdown.py`
 
 ## Session Notes
+
+### 2026-06-10
+
+- Progress/result checkpoint:
+  - 用户开始第 3 周第 1 小课：tf2 与 ROS 2 坐标系入门。
+  - 已创建 `tf2_frame_demo` 示例包和讲义 `WEEK_03_01_TF2_FRAMES.md`。
+  - 示例 TF 树为 `map -> odom -> base_link -> camera_link`。
+  - `map -> odom` 和 `base_link -> camera_link` 由 launch 中的 `tf2_ros/static_transform_publisher` 发布。
+  - `odom -> base_link` 由 `dynamic_frame_broadcaster` 发布，`frame_listener` 查询 `map -> camera_link`。
+  - 用户实操确认：launch 初期等待 TF，之后 listener 和 `tf2_echo map camera_link` 都能持续输出坐标变换。
+  - 用户实操确认：RViz2 中添加 TF display 后能看到 `map/odom/base_link/camera_link`，其中 `base_link` 绕 `odom` 运动，`camera_link` 跟随 `base_link`。
+  - 已按用户要求把 RViz2 可视化纳入第 3 周第 1 小课正式讲义；关闭 RViz2 时选择 `Discard`，不保存临时 `~/.rviz2/default.rviz`。
+  - 已按用户要求给第 3 周第 1 小课核心代码补充详细教学注释：`frame_math.py`、`dynamic_frame_broadcaster.py`、`frame_listener.py`、`tf2_demo.launch.py`。
+  - 已修复 Ctrl-C 退出时两个 Python 节点的 traceback；原因是 rclpy context 可能已由信号处理器 shutdown，代码又重复 shutdown。
+- Verification:
+  - `source /opt/ros/jazzy/setup.bash && PYTHONPATH=src/tf2_frame_demo:$PYTHONPATH python3 -m unittest discover -s src/tf2_frame_demo/test` 通过，当前 10 个测试。
+  - `python3 -m compileall src/tf2_frame_demo/tf2_frame_demo src/tf2_frame_demo/launch src/tf2_frame_demo/test` 通过。
+  - `source /opt/ros/jazzy/setup.bash && colcon build --packages-select tf2_frame_demo` 通过。
+  - `ros2 pkg executables tf2_frame_demo` 显示 `dynamic_frame_broadcaster` 和 `frame_listener`。
+  - `ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch tf2_frame_demo tf2_demo.launch.py --show-args` 通过。
+  - `timeout 8s ros2 launch tf2_frame_demo tf2_demo.launch.py` 能启动并打印变化的 `map -> camera_link`；沙箱中出现 DDS `Operation not permitted` 噪声，但节点仍完成 TF 查询。
+  - `timeout -s INT 7s ros2 launch tf2_frame_demo tf2_demo.launch.py` 验证中，`frame_listener` 和 `dynamic_frame_broadcaster` 在 SIGINT 后均 clean exit；沙箱中 static_transform_publisher 显示 `exit code -2` 属于外部 SIGINT。
+- Next:
+  - 带用户完成第 3 周第 1 小课收尾问答，确认能解释父/子 frame、静态/动态 TF、TF 树间接查询和 RViz2 中看到的是坐标系而不是模型。
+  - 用户理解后进入合并后的第 3 周第 2 小课：`robot_description`、URDF、轮子、摄像头和雷达 frame。
 
 ### 2026-06-10
 

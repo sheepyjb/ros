@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>tf2_frame_demo</name>
+  <version>0.1.0</version>
+  <description>ROS 2 tf2 frame learning demo.</description>
+  <maintainer email="student@example.com">ROS 2 Learner</maintainer>
+  <license>MIT</license>
+
+  <depend>geometry_msgs</depend>
+  <depend>rclpy</depend>
+  <depend>tf2_ros</depend>
+
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>tf2_tools</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

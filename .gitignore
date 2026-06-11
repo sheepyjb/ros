@@ -21,3 +21,5 @@ __pycache__/
 *.bag/
 *.db3
 *.mcap
+frames_*.gv
+frames_*.pdf

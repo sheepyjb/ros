@@ -13,6 +13,9 @@
 .
 ├── ros2_learning_notes.md
 └── src/
+    ├── robot_bringup/
+    ├── robot_interfaces/
+    ├── tf2_frame_demo/
     └── turtlesim_p_controller/
 ```
 
@@ -65,6 +68,28 @@ ros2 launch robot_bringup turtlesim_goal.launch.py
 ```bash
 ros2 service call /set_goal robot_interfaces/srv/SetGoal "{x: 2.0, y: 8.0}"
 ```
+
+第 3 周第 1 节进入 tf2 和坐标系：
+
+```bash
+colcon build --packages-select tf2_frame_demo
+source install/setup.bash
+ros2 launch tf2_frame_demo tf2_demo.launch.py
+```
+
+查看 `map -> camera_link`：
+
+```bash
+ros2 run tf2_ros tf2_echo map camera_link
+```
+
+用 RViz2 观察 TF 坐标轴：
+
+```bash
+rviz2
+```
+
+打开后设置 `Fixed Frame = map`，再添加 `TF` display。
 
 参数默认值在：
 

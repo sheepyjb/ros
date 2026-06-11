@@ -91,6 +91,33 @@
 - 添加摄像头和雷达 frame。
 - 在 RViz 中检查 TF 树。
 
+当前进度：
+
+- 第 3 周第 1 小课开始，新增 `tf2_frame_demo` 示例包。
+- 本节先不进入 URDF，先用 `map -> odom -> base_link -> camera_link` 这棵最小 TF 树理解坐标关系。
+- `map -> odom` 和 `base_link -> camera_link` 是静态 transform。
+- `odom -> base_link` 是动态 transform，由 `dynamic_frame_broadcaster` 周期发布。
+- `frame_listener` 查询 `map -> camera_link`，用于观察 tf2 如何沿 TF 树推导间接坐标关系。
+- 本节已加入 RViz2 可视化观察：设置 `Fixed Frame = map`，添加 `TF` display，观察 `base_link` 绕 `odom` 运动、`camera_link` 跟随 `base_link`。
+- 第 1 小课的 RViz2 配置只是临时观察，关闭时不保存；后续 `robot_description` 小课再把正式 RViz 配置保存到项目文件。
+
+第 3 周第 1 小课运行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select tf2_frame_demo
+source install/setup.bash
+ros2 launch tf2_frame_demo tf2_demo.launch.py
+```
+
+查看 TF：
+
+```bash
+ros2 run tf2_ros tf2_echo map camera_link
+rviz2
+ros2 run tf2_tools view_frames
+```
+
 ### 第 4 周：Gazebo 仿真
 
 目标：在仿真环境里跑机器人，不急着上真机。
