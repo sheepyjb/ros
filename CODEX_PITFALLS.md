@@ -1,5 +1,41 @@
 # CODEX_PITFALLS
 
+## 2026-06-12
+
+Symptom:
+
+- RViz2 中 `RobotModel` 显示 `Status: Ok`，但画面一开始只有 Grid，看不到模型；展开 `TF -> Frames` 也可能暂时为空。
+
+Root cause:
+
+- `RobotModel` 订阅 `/robot_description` 的 QoS 如果是 `Volatile`，RViz 可能错过 `robot_state_publisher` 的 transient local 机器人描述；另外 RViz 刚启动时模型/TF 也可能有短暂刷新延迟。
+
+Fix:
+
+- 将 `src/robot_description/rviz/display.rviz` 中 `Description Topic` 的 `Durability Policy` 设为 `Transient Local`；重新 `colcon build --packages-select robot_description` 并重启 launch。
+
+Prevention note:
+
+- 后续保存 RViz 配置时，检查 `RobotModel -> Description Topic -> Durability Policy` 是否仍为 `Transient Local`。如果 RViz 仍短暂空白，先等 2-5 秒或切换 `RobotModel`/`TF` 勾选状态，再查 `/robot_description` 和 `/tf_static`。
+
+## 2026-06-11
+
+Symptom:
+
+- 第 3 周第 2 小课最初计划用 `joint_state_publisher_gui` 模拟轮子 joint，但 `ros2 pkg prefix joint_state_publisher_gui` 和 `ros2 pkg prefix joint_state_publisher` 都返回 `Package not found`。
+
+Root cause:
+
+- 当前 ROS 2 Jazzy 环境安装了 `robot_state_publisher` 和 `rviz2`，但没有安装 `joint_state_publisher` 系列包；如果 launch 直接启动 GUI，会在运行时缺包失败。
+
+Fix:
+
+- 本课将 `robot_description` 收敛为固定 frame 模型：轮子、摄像头和雷达 joint 均使用 `fixed`，launch 只启动 `robot_state_publisher` 和 RViz2。
+
+Prevention note:
+
+- 后续需要可动 joint 或 GUI 滑条时，先确认 `joint_state_publisher` 是否已安装；未安装前不要把它写成必需运行依赖。
+
 ## 2026-06-10
 
 Symptom:

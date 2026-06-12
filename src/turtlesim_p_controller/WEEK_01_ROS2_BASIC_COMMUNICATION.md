@@ -1511,51 +1511,247 @@ Package 'turtlesim_p_controller' not found
 
 这些问题不要求背诵，但要能用自己的话讲清楚。
 
-1. ROS 2 workspace 是什么？
-2. ROS 2 package 是什么？
-3. node 是什么？
-4. topic 是什么？
-5. service 是什么？
-6. action 是什么？
-7. parameter 是什么？
-8. `/turtle1/pose` 的消息方向是什么？
-9. `/turtle1/cmd_vel` 的消息方向是什么？
-10. 为什么控制器要订阅 `/turtle1/pose`？
-11. 为什么控制器要发布 `/turtle1/cmd_vel`？
-12. 什么是闭环控制？
-13. 为什么角速度要根据角度误差计算？
-14. 为什么 `angular_gain` 太小可能导致绕圈？
-15. 为什么到目标附近后速度变成 0？
-16. 为什么 `linear_gain:=8` 会类型错误？
-17. 为什么每次新终端都要 source 环境？
-18. `ros2 node list` 用来查什么？
-19. `ros2 topic echo` 用来查什么？
-20. `rqt_graph` 比命令行好在哪里？
+问题 1：
 
-## 十七、知识问答参考答案要点
+```text
+ROS 2 workspace 是什么？
+```
 
-1. workspace 是工作空间，里面通常有 `src/`、`build/`、`install/`、`log/`。
-2. package 是功能包，一个 package 负责一类功能。
-3. node 是运行中的功能单元，例如 `/turtlesim`、`/turtle_goal_controller`。
-4. topic 是连续数据流，适合位姿、速度、图像、雷达这类不断变化的数据。
-5. service 是一次请求一次响应，适合 reset、查询、保存地图这类短操作。
-6. action 是有过程的任务，适合导航、旋转到角度、机械臂运动这类可反馈任务。
-7. parameter 是节点运行配置，例如目标点、速度比例系数。
-8. `/turtlesim` 发布 `/turtle1/pose`，控制器订阅它。
-9. 控制器发布 `/turtle1/cmd_vel`，`/turtlesim` 订阅它。
-10. 控制器需要知道当前位置，才能计算离目标还有多远、方向差多少。
-11. 控制器需要发速度，才能让 turtlesim 里的乌龟运动。
-12. 闭环控制是“测量当前状态 -> 计算误差 -> 输出控制量 -> 状态改变 -> 再测量”。
-13. 角速度根据角度误差计算，才能偏得多时快转，偏得少时慢转，对准后不转。
-14. `angular_gain` 太小时转向修正慢，但线速度还在前进，所以可能绕大圈。
-15. 因为 `distance_error < goal_tolerance` 时，代码主动返回 0 速度。
-16. ROS 2 参数有类型；`8` 是整数，`8.0` 是浮点数，而代码声明的默认值是浮点数。
-17. `source /opt/ros/jazzy/setup.bash` 让终端认识系统 ROS 2；`source install/setup.bash` 让终端认识自己的 workspace。
-18. `ros2 node list` 用来查看当前有哪些节点正在运行。
-19. `ros2 topic echo` 用来查看某个 topic 上正在传输的消息内容。
-20. `rqt_graph` 能把节点和 topic 的关系画成图，更容易看清系统结构。
+参考答案：
 
-## 十八、第一周通过标准
+```text
+workspace 是工作空间，里面通常有 src/、build/、install/、log/。
+```
+
+问题 2：
+
+```text
+ROS 2 package 是什么？
+```
+
+参考答案：
+
+```text
+package 是功能包，一个 package 负责一类功能。
+```
+
+问题 3：
+
+```text
+node 是什么？
+```
+
+参考答案：
+
+```text
+node 是运行中的功能单元，例如 /turtlesim、/turtle_goal_controller。
+```
+
+问题 4：
+
+```text
+topic 是什么？
+```
+
+参考答案：
+
+```text
+topic 是连续数据流，适合位姿、速度、图像、雷达这类不断变化的数据。
+```
+
+问题 5：
+
+```text
+service 是什么？
+```
+
+参考答案：
+
+```text
+service 是一次请求一次响应，适合 reset、查询、保存地图这类短操作。
+```
+
+问题 6：
+
+```text
+action 是什么？
+```
+
+参考答案：
+
+```text
+action 是有过程的任务，适合导航、旋转到角度、机械臂运动这类可反馈任务。
+```
+
+问题 7：
+
+```text
+parameter 是什么？
+```
+
+参考答案：
+
+```text
+parameter 是节点运行配置，例如目标点、速度比例系数。
+```
+
+问题 8：
+
+```text
+/turtle1/pose 的消息方向是什么？
+```
+
+参考答案：
+
+```text
+/turtlesim 发布 /turtle1/pose，控制器订阅它。
+```
+
+问题 9：
+
+```text
+/turtle1/cmd_vel 的消息方向是什么？
+```
+
+参考答案：
+
+```text
+控制器发布 /turtle1/cmd_vel，/turtlesim 订阅它。
+```
+
+问题 10：
+
+```text
+为什么控制器要订阅 /turtle1/pose？
+```
+
+参考答案：
+
+```text
+控制器需要知道当前位置，才能计算离目标还有多远、方向差多少。
+```
+
+问题 11：
+
+```text
+为什么控制器要发布 /turtle1/cmd_vel？
+```
+
+参考答案：
+
+```text
+控制器需要发速度，才能让 turtlesim 里的乌龟运动。
+```
+
+问题 12：
+
+```text
+什么是闭环控制？
+```
+
+参考答案：
+
+```text
+闭环控制是“测量当前状态 -> 计算误差 -> 输出控制量 -> 状态改变 -> 再测量”。
+```
+
+问题 13：
+
+```text
+为什么角速度要根据角度误差计算？
+```
+
+参考答案：
+
+```text
+角速度根据角度误差计算，才能偏得多时快转，偏得少时慢转，对准后不转。
+```
+
+问题 14：
+
+```text
+为什么 angular_gain 太小可能导致绕圈？
+```
+
+参考答案：
+
+```text
+angular_gain 太小时转向修正慢，但线速度还在前进，所以可能绕大圈。
+```
+
+问题 15：
+
+```text
+为什么到目标附近后速度变成 0？
+```
+
+参考答案：
+
+```text
+因为 distance_error < goal_tolerance 时，代码主动返回 0 速度。
+```
+
+问题 16：
+
+```text
+为什么 linear_gain:=8 会类型错误？
+```
+
+参考答案：
+
+```text
+ROS 2 参数有类型；8 是整数，8.0 是浮点数，而代码声明的默认值是浮点数。
+```
+
+问题 17：
+
+```text
+为什么每次新终端都要 source 环境？
+```
+
+参考答案：
+
+```text
+source /opt/ros/jazzy/setup.bash 让终端认识系统 ROS 2；source install/setup.bash 让终端认识自己的 workspace。
+```
+
+问题 18：
+
+```text
+ros2 node list 用来查什么？
+```
+
+参考答案：
+
+```text
+ros2 node list 用来查看当前有哪些节点正在运行。
+```
+
+问题 19：
+
+```text
+ros2 topic echo 用来查什么？
+```
+
+参考答案：
+
+```text
+ros2 topic echo 用来查看某个 topic 上正在传输的消息内容。
+```
+
+问题 20：
+
+```text
+rqt_graph 比命令行好在哪里？
+```
+
+参考答案：
+
+```text
+rqt_graph 能把节点和 topic 的关系画成图，更容易看清系统结构。
+```
+
+## 十七、第一周通过标准
 
 你可以进入下一周的标准：
 

@@ -1,0 +1,261 @@
+<?xml version="1.0"?>
+<!--
+  这是一个最小差速小车 URDF。
+
+  坐标约定：
+  - x：机器人前方
+  - y：机器人左侧
+  - z：机器人上方
+
+  URDF 中最重要的两类元素：
+  - link：机器人上的一个刚体/坐标系，例如底盘、轮子、摄像头、雷达。
+  - joint：两个 link 之间的连接关系，也就是 TF 树中的父子关系。
+-->
+<robot name="diffbot">
+  <!--
+    robot.name：机器人模型名称。
+    RViz 和 robot_state_publisher 会把这个文件当作一台名为 diffbot 的机器人描述。
+  -->
+
+  <!--
+    base_link：机器人底盘主坐标系。
+    后续控制、导航、传感器安装通常都以 base_link 为核心参考坐标系。
+  -->
+  <link name="base_link">
+    <!--
+      visual：只影响 RViz/Gazebo 里“看起来是什么样”。
+      它不决定 TF，也不决定碰撞范围。
+    -->
+    <visual>
+      <!--
+        origin：这个 visual 几何体相对 base_link 原点的位置和姿态。
+        xyz 单位是米，格式是 x y z。
+        rpy 单位是弧度，格式是 roll pitch yaw。
+
+        这里 z=0.08，因为底盘盒子的高度是 0.16 米。
+        把盒子中心抬高 0.08 米后，盒子底面刚好在 z=0 附近。
+      -->
+      <origin xyz="0 0 0.08" rpy="0 0 0"/>
+
+      <!-- geometry：定义 visual 的几何形状。 -->
+      <geometry>
+        <!--
+          box.size：长方体尺寸，单位是米，格式是 x长度 y宽度 z高度。
+          0.42 0.30 0.16 表示车体前后长 0.42 米、左右宽 0.30 米、高 0.16 米。
+        -->
+        <box size="0.42 0.30 0.16"/>
+      </geometry>
+
+      <!-- material：定义显示颜色或材质名称。 -->
+      <material name="body_blue">
+        <!--
+          color.rgba：红、绿、蓝、透明度，范围 0.0 到 1.0。
+          a=1.0 表示不透明。
+        -->
+        <color rgba="0.10 0.28 0.80 1.0"/>
+      </material>
+    </visual>
+
+    <!--
+      collision：碰撞几何体。
+      RViz 默认主要看 visual；Gazebo/Nav2 这类仿真或规划工具会更关心 collision。
+      本课让 collision 和 visual 尺寸一致，便于理解。
+    -->
+    <collision>
+      <!-- collision 的 origin 含义和 visual 的 origin 一样。 -->
+      <origin xyz="0 0 0.08" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.42 0.30 0.16"/>
+      </geometry>
+    </collision>
+
+    <!--
+      inertial：质量和转动惯量。
+      RViz 显示模型时基本不使用它；Gazebo 物理仿真会使用。
+    -->
+    <inertial>
+      <!-- inertial.origin：质心相对 base_link 原点的位置和姿态。 -->
+      <origin xyz="0 0 0.08" rpy="0 0 0"/>
+
+      <!-- mass.value：质量，单位是千克。 -->
+      <mass value="4.0"/>
+
+      <!--
+        inertia：惯性矩阵的 6 个独立参数。
+        ixx/iyy/izz 是绕 x/y/z 轴的转动惯量。
+        ixy/ixz/iyz 是惯性积；简单对称模型通常先写 0。
+        本课数值只是教学用的近似值。
+      -->
+      <inertia ixx="0.04" ixy="0.0" ixz="0.0" iyy="0.08" iyz="0.0" izz="0.10"/>
+    </inertial>
+  </link>
+
+  <!-- left_wheel_link：左轮 link。 -->
+  <link name="left_wheel_link">
+    <visual>
+      <!--
+        轮子用 cylinder 表示。
+        URDF 的 cylinder 默认沿 z 轴延伸；这里 rpy 绕 x 轴转 1.5708 弧度约等于 90 度，
+        让圆柱轴线转到 y 方向，视觉上像装在车体左右两侧的轮子。
+      -->
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <!--
+          cylinder.radius：圆柱半径，单位米。
+          cylinder.length：圆柱长度，单位米。
+          对轮子来说，radius 是轮子半径，length 是轮子厚度。
+        -->
+        <cylinder radius="0.07" length="0.05"/>
+      </geometry>
+      <material name="wheel_dark">
+        <color rgba="0.02 0.02 0.02 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.07" length="0.05"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.35"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+
+  <!--
+    left_wheel_joint：连接 base_link 和 left_wheel_link。
+
+    joint.name：关节名称。
+    joint.type：
+    - fixed 表示父子 link 固定连接，不需要 /joint_states。
+    - continuous 表示可以无限旋转，后续真实轮子会更适合用 continuous。
+
+    本课先用 fixed，是为了不依赖 joint_state_publisher，先专注 URDF 到 TF 的关系。
+  -->
+  <joint name="left_wheel_joint" type="fixed">
+    <!-- parent.link：父 link，也就是 TF 父坐标系。 -->
+    <parent link="base_link"/>
+
+    <!-- child.link：子 link，也就是 TF 子坐标系。 -->
+    <child link="left_wheel_link"/>
+
+    <!--
+      joint.origin：子 link 原点相对父 link 原点的位置和姿态。
+      xyz="0 0.18 0.07" 表示左轮在 base_link 左侧 0.18 米、上方 0.07 米。
+    -->
+    <origin xyz="0 0.18 0.07" rpy="0 0 0"/>
+
+    <!--
+      axis：关节运动轴。
+      fixed joint 中不会实际运动；这里保留 axis 是为了说明轮子未来旋转轴会沿 y 方向。
+    -->
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- right_wheel_link：右轮 link，形状和左轮一致。 -->
+  <link name="right_wheel_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.07" length="0.05"/>
+      </geometry>
+      <!-- 只写 material name 时，会复用前面定义过的 wheel_dark 材质。 -->
+      <material name="wheel_dark"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.07" length="0.05"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.35"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </link>
+
+  <!-- right_wheel_joint：右轮相对 base_link 的固定安装关系。 -->
+  <joint name="right_wheel_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="right_wheel_link"/>
+    <!-- y=-0.18 表示右轮在 base_link 右侧 0.18 米。 -->
+    <origin xyz="0 -0.18 0.07" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- camera_link：摄像头硬件本体 frame。绿色盒子表示摄像头外壳。 -->
+  <link name="camera_link">
+    <visual>
+      <!--
+        这里 visual.origin 是 0 0 0，所以绿色盒子的中心就是 camera_link 原点。
+      -->
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <!-- 摄像头盒子尺寸：前后 0.06 米、左右 0.09 米、高 0.05 米。 -->
+        <box size="0.06 0.09 0.05"/>
+      </geometry>
+      <material name="camera_green">
+        <color rgba="0.00 0.55 0.25 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <!-- camera_joint：摄像头相对底盘的固定安装关系。 -->
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <!--
+      摄像头原点在 base_link 前方 0.22 米、上方 0.20 米。
+      rpy=0 0 0 表示 camera_link 的 x/y/z 轴方向暂时和 base_link 一致。
+    -->
+    <origin xyz="0.22 0 0.20" rpy="0 0 0"/>
+  </joint>
+
+  <!--
+    camera_optical_frame：相机光学坐标系。
+    它没有 visual，因为它不是额外的实体，只是图像算法常用的一套坐标轴。
+  -->
+  <link name="camera_optical_frame"/>
+
+  <!--
+    camera_optical_joint：camera_link 到 camera_optical_frame 的固定旋转关系。
+
+    xyz=0 0 0 表示两个 frame 原点重合。
+    rpy="-1.5708 0 -1.5708" 把普通机器人坐标系转换成相机光学坐标系：
+    - optical z 轴朝镜头前方
+    - optical x 轴朝图像右方
+    - optical y 轴朝图像下方
+  -->
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_optical_frame"/>
+    <origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
+  </joint>
+
+  <!-- laser_link：雷达 frame。红色圆柱表示雷达外形。 -->
+  <link name="laser_link">
+    <visual>
+      <!-- visual 原点为 0，表示红色圆柱中心就是 laser_link 原点。 -->
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <!-- 雷达圆柱：半径 0.055 米，高度 0.04 米。 -->
+        <cylinder radius="0.055" length="0.04"/>
+      </geometry>
+      <material name="laser_red">
+        <color rgba="0.85 0.05 0.05 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <!-- laser_joint：雷达相对底盘的固定安装关系。 -->
+  <joint name="laser_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="laser_link"/>
+    <!--
+      雷达原点在 base_link 前方 0.06 米、上方 0.25 米。
+      这就是 RViz 中红色圆柱出现在车体上方偏前位置的原因。
+    -->
+    <origin xyz="0.06 0 0.25" rpy="0 0 0"/>
+  </joint>
+</robot>

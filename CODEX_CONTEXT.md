@@ -2,13 +2,15 @@
 
 ## Latest Snapshot
 
-Date: 2026-06-10
+Date: 2026-06-12
 
 Current goal:
 
 - 第 1 周 ROS 2 基础通信学习已完成。
 - 第 2 周工作空间、包和接口学习已完成。
-- 第 3 周第 1 小课：tf2 与 ROS 2 坐标系入门材料已创建，下一步带用户实操验证和答疑。
+- 第 3 周第 1 小课：tf2 与 ROS 2 坐标系入门已完成。
+- 第 3 周第 2 小课：`robot_description`、URDF、轮子、摄像头和雷达 frame 已完成并实操验证。
+- 下一步新对话开始第 3 周第 3 小课：Xacro、可复用 RViz/bringup 启动和更完整模型组织。
 
 Completed work:
 
@@ -57,6 +59,16 @@ Completed work:
 - 第 3 周第 1 小课核心代码已补充教学注释，覆盖 `frame_math.py`、`dynamic_frame_broadcaster.py`、`frame_listener.py` 和 `tf2_demo.launch.py`。
 - 新增 `test_frame_math.py`、`test_tf2_frame_demo_assets.py` 和 `test_node_shutdown.py`，测试数学逻辑、package/launch 资产和 Ctrl-C 退出路径。
 - 更新 `README.md` 和 `ros2_learning_notes.md`，加入第 3 周第 1 小课入口。
+- 创建 ROS 2 Python 资源包 `src/robot_description`，用于第 3 周第 2 小课 URDF 和机器人模型显示。
+- 新增 `urdf/diffbot.urdf`，描述简化差速小车的 `base_link`、左右轮、`camera_link`、`camera_optical_frame` 和 `laser_link`。
+- 新增 `launch/display.launch.py`，启动 `robot_state_publisher` 和 RViz2。
+- 新增 `rviz/display.rviz`，正式保存 RobotModel + TF 的 RViz2 显示配置。
+- 创建第 3 周第 2 小课讲义 `src/robot_description/WEEK_03_02_ROBOT_DESCRIPTION_URDF.md`。
+- 新增 `test_robot_description_assets.py`，测试 `robot_description` 包结构、安装声明、依赖声明和 URDF link/joint 关系。
+- 更新 `README.md` 和 `ros2_learning_notes.md`，加入第 3 周第 2 小课入口。
+- 为 `diffbot.urdf` 补充教学注释，覆盖 `robot/link/joint/visual/collision/inertial/origin/geometry/material/mass/inertia/axis` 等 URDF 常见字段。
+- 将 `robot_description` 的 RViz RobotModel 描述 topic QoS 改为 `Durability Policy: Transient Local`，避免 RViz 错过 `/robot_description`。
+- 将第 1 周和第 3 周第 1 小课的“知识问答”统一为“问题 N / 参考答案”格式，第 3 周第 2 小课已保持该格式。
 
 Important decisions:
 
@@ -75,6 +87,10 @@ Important decisions:
 - 本课 TF 树固定为 `map -> odom -> base_link -> camera_link`，其中 `map -> odom` 和 `base_link -> camera_link` 是静态 transform，`odom -> base_link` 是动态 transform。
 - 本课暂不引入 URDF；先用 `static_transform_publisher`、`TransformBroadcaster`、`TransformListener`、`tf2_echo` 和 RViz2 的 TF display 理解 frame/transform/TF 树。
 - 第 1 小课的 RViz2 配置只用于临时观察，关闭时选择 `Discard`；正式可复用配置后续保存到 `robot_description/rviz/display.rviz`。
+- `robot_description` 使用 `ament_python` 资源包风格，包内不放控制算法节点，只安装 launch、URDF、RViz 配置和讲义。
+- 当前环境没有安装 `joint_state_publisher` / `joint_state_publisher_gui`；第 3 周第 2 小课先把轮子、摄像头和雷达都建模为 `fixed` joint，重点理解 URDF 如何生成固定 frame。轮子真实旋转和 `/joint_states` 后续在 Gazebo/控制课再引入。
+- `camera_optical_frame` 通过 `camera_optical_joint` 挂在 `camera_link` 下，用于提前建立相机光学坐标系概念。
+- 继续保留 RViz RobotModel 的 `Description Source: Topic`，因为它更贴近真实 ROS 2 链路：URDF -> `robot_state_publisher` -> `/robot_description` + `/tf_static` -> RViz。
 
 Verification:
 
@@ -95,16 +111,19 @@ Verification:
 - 已运行 `ros2 launch tf2_frame_demo tf2_demo.launch.py --show-args`，在 `ROS_LOG_DIR=/tmp/ros2_launch_logs` 下确认 launch 文件可被加载。
 - 已用 `timeout 8s ros2 launch tf2_frame_demo tf2_demo.launch.py` 短时启动验证，listener 打印了连续变化的 `map -> camera_link`。
 - 已用 `timeout -s INT 7s ros2 launch tf2_frame_demo tf2_demo.launch.py` 模拟 Ctrl-C，确认两个 Python 节点 clean exit。
+- 已运行 `python3 -m unittest discover -s src/robot_description/test`，7 个测试通过。
+- 已运行 `python3 -m compileall src/robot_description`，语法检查通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && check_urdf src/robot_description/urdf/diffbot.urdf`，URDF 解析通过，根 link 为 `base_link`，有 4 个直接子 link。
+- 已运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_description`，构建通过。
+- 已运行 `ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_description display.launch.py --show-args`，确认 launch 文件可被加载。
+- 已运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_interfaces turtlesim_p_controller robot_bringup tf2_frame_demo robot_description`，5 个包构建通过。
 - 已实际运行 turtlesim 图形窗口和控制器节点。
 - 已使用 `/reset` 服务验证 service 调用。
 - 已使用 rqt_graph 观察 `/turtlesim` 和 `/turtle_goal_controller` 的 topic 连接关系。
 
 Remaining tasks:
 
-- 带用户实操第 3 周第 1 小课，重点确认 `frame`、`transform`、`header.frame_id`、`child_frame_id`、`/tf`、`/tf_static`、`tf2_echo`。
-- 第 3 周小课规划调整为 3 节：第 1 节 tf2/RViz2 坐标系观察；第 2 节合并 `robot_description`、URDF、轮子、摄像头和雷达 frame；第 3 节 Xacro、RViz 配置和综合启动。
-- 用户确认理解后进入第 3 周第 2 小课：创建 `robot_description` 包，逐步进入 URDF / Xacro 和 RViz。
-- 后续创建 `robot_description` 包，逐步进入 URDF / Xacro 和 RViz。
+- 新对话开始第 3 周第 3 小课：Xacro、可复用 RViz/bringup 启动和更完整模型组织。
 
 Key files:
 
@@ -138,8 +157,56 @@ Key files:
 - `src/tf2_frame_demo/test/test_frame_math.py`
 - `src/tf2_frame_demo/test/test_tf2_frame_demo_assets.py`
 - `src/tf2_frame_demo/test/test_node_shutdown.py`
+- `src/robot_description/WEEK_03_02_ROBOT_DESCRIPTION_URDF.md`
+- `src/robot_description/launch/display.launch.py`
+- `src/robot_description/urdf/diffbot.urdf`
+- `src/robot_description/rviz/display.rviz`
+- `src/robot_description/package.xml`
+- `src/robot_description/setup.py`
+- `src/robot_description/test/test_robot_description_assets.py`
 
 ## Session Notes
+
+### 2026-06-12
+
+- Progress/result checkpoint:
+  - 用户完成第 3 周第 2 小课实操：能在 RViz2 中观察 `robot_description` 生成的 RobotModel 和 TF。
+  - 用户确认理解：红色圆柱为 `laser_link`，摄像头包含 `camera_link` 和 `camera_optical_frame` 两个 frame；二者原点重合但姿态不同。
+  - 已为 `src/robot_description/urdf/diffbot.urdf` 补充中文教学注释，解释每类 URDF 标签和参数含义。
+  - 已将 `src/robot_description/rviz/display.rviz` 的 RobotModel `/robot_description` topic Durability 改为 `Transient Local`。
+  - 已把第 1 周和第 3 周第 1 小课的知识问答统一为第 3 周第 2 小课的格式：`问题 N：`、问题代码块、`参考答案：`、答案代码块。
+  - 用户要求提交当前进度，并计划新建对话开始第 3 周第 3 小课。
+- Verification:
+  - `python3 -m unittest discover -s src/robot_description/test` 通过，当前 7 个测试。
+  - `source /opt/ros/jazzy/setup.bash && check_urdf src/robot_description/urdf/diffbot.urdf` 通过。
+  - `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_description` 通过。
+  - `ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_description display.launch.py --show-args` 通过。
+  - `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 topic info -v /robot_description --no-daemon` 在非沙箱环境确认 publisher/subscriber QoS 都是 `TRANSIENT_LOCAL`。
+- Next:
+  - 第 3 周第 3 小课从 Xacro 开始，建议将 `diffbot.urdf` 转成 `diffbot.urdf.xacro`，抽出尺寸参数、颜色/material、传感器安装宏，并把 `robot_bringup` 接入模型显示 launch。
+
+### 2026-06-11
+
+- Progress/result checkpoint:
+  - 用户开始第 3 周第 2 小课：`robot_description`、URDF、轮子、摄像头和雷达 frame。
+  - 已创建 `robot_description` 包，采用 `ament_python` 资源包结构。
+  - 已创建 `diffbot.urdf`，模型树为 `base_link -> left_wheel_link/right_wheel_link/camera_link/laser_link`，并包含 `camera_link -> camera_optical_frame`。
+  - 已创建 `display.launch.py`，启动 `robot_state_publisher` 和 RViz2；不依赖 `joint_state_publisher_gui`。
+  - 已创建正式 RViz2 配置 `rviz/display.rviz`，显示 Grid、RobotModel 和 TF。
+  - 已创建讲义 `WEEK_03_02_ROBOT_DESCRIPTION_URDF.md`，包含练习题、知识问答、参考答案和完成标准。
+  - 已按用户提醒更新 `ros2_learning_notes.md`，并同步更新 `README.md`。
+  - 发现当前环境没有 `joint_state_publisher` / `joint_state_publisher_gui`，已记录到 `CODEX_PITFALLS.md`。
+- Verification:
+  - `python3 -m unittest discover -s src/robot_description/test` 通过，当前 5 个测试。
+  - `python3 -m compileall src/robot_description` 通过。
+  - `source /opt/ros/jazzy/setup.bash && check_urdf src/robot_description/urdf/diffbot.urdf` 通过，root link 为 `base_link`。
+  - `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_description` 通过。
+  - `ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_description display.launch.py --show-args` 通过。
+  - `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_interfaces turtlesim_p_controller robot_bringup tf2_frame_demo robot_description` 通过。
+- Next:
+  - 带用户运行 `ros2 launch robot_description display.launch.py`，在 RViz2 中观察 RobotModel 和 TF。
+  - 用 `tf2_echo base_link camera_link`、`tf2_echo base_link laser_link` 和 `view_frames` 检查模型 frame。
+  - 确认用户能解释 URDF link/joint、fixed joint、`robot_state_publisher` 和 RobotModel/TF 的关系后，进入第 3 周第 3 小课 Xacro。
 
 ### 2026-06-10
 

@@ -68,7 +68,7 @@
 - 第 1 节 `ros2 launch` 和 YAML 参数文件已完成并通过实操理解。
 - 第 2 节进入 `robot_bringup` 包与工作空间组织，新增独立启动编排包。
 - 第 3 节 `robot_interfaces` 自定义接口与综合练习已完成，定义 `TargetDetection.msg` 和 `SetGoal.srv`，并用 `/set_goal` 服务跑通目标点更新。
-- 第 2 周已完成，下一步进入第 3 周 tf2、URDF 与 RViz。
+- 第 2 周已完成。
 
 ### 第 3 周：tf2、URDF 与 RViz
 
@@ -93,13 +93,16 @@
 
 当前进度：
 
-- 第 3 周第 1 小课开始，新增 `tf2_frame_demo` 示例包。
-- 本节先不进入 URDF，先用 `map -> odom -> base_link -> camera_link` 这棵最小 TF 树理解坐标关系。
+- 第 3 周第 1 小课已完成，新增 `tf2_frame_demo` 示例包。
+- 第 1 小课先不进入 URDF，先用 `map -> odom -> base_link -> camera_link` 这棵最小 TF 树理解坐标关系。
 - `map -> odom` 和 `base_link -> camera_link` 是静态 transform。
 - `odom -> base_link` 是动态 transform，由 `dynamic_frame_broadcaster` 周期发布。
 - `frame_listener` 查询 `map -> camera_link`，用于观察 tf2 如何沿 TF 树推导间接坐标关系。
-- 本节已加入 RViz2 可视化观察：设置 `Fixed Frame = map`，添加 `TF` display，观察 `base_link` 绕 `odom` 运动、`camera_link` 跟随 `base_link`。
-- 第 1 小课的 RViz2 配置只是临时观察，关闭时不保存；后续 `robot_description` 小课再把正式 RViz 配置保存到项目文件。
+- 第 1 小课已加入 RViz2 可视化观察：设置 `Fixed Frame = map`，添加 `TF` display，观察 `base_link` 绕 `odom` 运动、`camera_link` 跟随 `base_link`。
+- 第 3 周第 2 小课开始，新增 `robot_description` 包。
+- 第 2 小课创建 `urdf/diffbot.urdf`，用 URDF 描述简化差速小车的 `base_link`、左右轮、摄像头和雷达 frame。
+- 第 2 小课的正式 RViz2 配置保存为 `src/robot_description/rviz/display.rviz`。
+- 当前环境没有安装 `joint_state_publisher` / `joint_state_publisher_gui`，所以本课先把轮子、摄像头和雷达都作为 fixed joint 观察，后续 Gazebo 和控制课再引入轮子真实旋转和 `/joint_states`。
 
 第 3 周第 1 小课运行：
 
@@ -115,6 +118,23 @@ ros2 launch tf2_frame_demo tf2_demo.launch.py
 ```bash
 ros2 run tf2_ros tf2_echo map camera_link
 rviz2
+ros2 run tf2_tools view_frames
+```
+
+第 3 周第 2 小课运行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select robot_description
+source install/setup.bash
+ros2 launch robot_description display.launch.py
+```
+
+查看模型 frame：
+
+```bash
+ros2 run tf2_ros tf2_echo base_link camera_link
+ros2 run tf2_ros tf2_echo base_link laser_link
 ros2 run tf2_tools view_frames
 ```
 

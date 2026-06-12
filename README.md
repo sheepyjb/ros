@@ -14,6 +14,7 @@
 ├── ros2_learning_notes.md
 └── src/
     ├── robot_bringup/
+    ├── robot_description/
     ├── robot_interfaces/
     ├── tf2_frame_demo/
     └── turtlesim_p_controller/
@@ -90,6 +91,25 @@ rviz2
 ```
 
 打开后设置 `Fixed Frame = map`，再添加 `TF` display。
+
+第 3 周第 2 节进入 `robot_description` 和 URDF：
+
+```bash
+colcon build --packages-select robot_description
+source install/setup.bash
+ros2 launch robot_description display.launch.py
+```
+
+这个 launch 会启动 `robot_state_publisher` 和 RViz2，用 `src/robot_description/urdf/diffbot.urdf` 显示简化差速小车，并观察：
+
+```text
+base_link
+left_wheel_link
+right_wheel_link
+camera_link
+camera_optical_frame
+laser_link
+```
 
 参数默认值在：
 
