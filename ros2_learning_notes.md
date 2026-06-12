@@ -171,6 +171,45 @@ ros2 run tf2_tools view_frames
 - 键盘控制小车运动。
 - RViz 同步显示雷达、图像、TF 和里程计。
 
+当前进度：
+
+- 第 4 周第 1 小课开始，新增 `robot_simulation` 包。
+- 本课先不放入小车，先验证 Gazebo Harmonic、`ros_gz_sim` 和 `ros_gz_bridge` 环境。
+- 新增 `worlds/empty_diffbot.world.sdf`，作为后续仿真的空世界。
+- 新增 `config/clock_bridge.yaml`，把 Gazebo `/clock` 单向桥接到 ROS 2 `/clock`。
+- 新增 `launch/gazebo_empty_world.launch.py`，从 ROS 2 launch 启动 Gazebo 空世界和 clock bridge。
+
+第 4 周第 1 小课运行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+command -v gz
+ros2 pkg prefix ros_gz_sim
+ros2 pkg prefix ros_gz_bridge
+```
+
+如果找不到 Gazebo/ros_gz：
+
+```bash
+sudo apt update
+sudo apt install ros-jazzy-ros-gz
+```
+
+启动空世界：
+
+```bash
+colcon build --packages-select robot_simulation
+source install/setup.bash
+ros2 launch robot_simulation gazebo_empty_world.launch.py
+```
+
+检查 `/clock`：
+
+```bash
+ros2 topic echo /clock --once
+gz topic -l
+```
+
 ### 第 5 周：YOLO 接入 ROS 2
 
 目标：把已有 YOLO 能力封装成 ROS 2 节点。

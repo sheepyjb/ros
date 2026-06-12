@@ -11,7 +11,8 @@ Current goal:
 - 第 3 周第 1 小课：tf2 与 ROS 2 坐标系入门已完成。
 - 第 3 周第 2 小课：`robot_description`、URDF、轮子、摄像头和雷达 frame 已完成并实操验证。
 - 第 3 周第 3 小课：Xacro、可复用 RViz/bringup 启动和更完整模型组织已完成代码与讲义准备。
-- 下一步带用户实操第 3 周第 3 小课：运行 bringup 模型显示入口、检查 Xacro 展开和 RViz/TF。
+- 第 4 周第 1 小课：Gazebo Harmonic 与 `ros_gz` 最小链路已完成代码、讲义和实机验证。
+- 下一步进入第 4 周第 2 小课：把差速小车放进 Gazebo，并桥接 `/cmd_vel` 和 `/odom`。
 
 Completed work:
 
@@ -81,6 +82,12 @@ Completed work:
 - 创建第 3 周第 3 小课讲义 `src/robot_description/WEEK_03_03_XACRO_AND_BRINGUP.md`。
 - 更新 `README.md`、`ros2_learning_notes.md`、`src/robot_description/README.md` 和 `src/robot_bringup/README.md`，加入 Xacro 与 bringup 显示入口说明。
 - 扩展 `test_robot_description_assets.py` 和 `test_bringup_assets.py`，覆盖 Xacro 文件、依赖、launch 处理和 bringup include 入口。
+- 创建 ROS 2 Python 资源包 `src/robot_simulation`，用于第 4 周 Gazebo 仿真资产。
+- 新增 `src/robot_simulation/worlds/empty_diffbot.world.sdf`，作为 Gazebo 空世界，包含物理、用户命令、场景广播插件、光源和地面。
+- 新增 `src/robot_simulation/config/clock_bridge.yaml`，将 Gazebo `/clock` 单向桥接到 ROS 2 `/clock`。
+- 新增 `src/robot_simulation/launch/gazebo_empty_world.launch.py`，include `ros_gz_sim/gz_sim.launch.py` 并启动 `ros_gz_bridge/parameter_bridge`。
+- 创建第 4 周第 1 小课讲义 `src/robot_simulation/WEEK_04_01_GAZEBO_ENVIRONMENT.md`。
+- 更新 `README.md` 和 `ros2_learning_notes.md`，加入第 4 周 Gazebo 环境检查、安装、空世界启动和 `/clock` 检查步骤。
 
 Important decisions:
 
@@ -108,6 +115,9 @@ Important decisions:
 - Xacro 文件拆分为顶层模型、材质、组件宏三类，避免一开始引入更深目录层级导致安装和 include 路径复杂化。
 - `robot_bringup/display_robot.launch.py` 通过 include 复用 `robot_description/display.launch.py`，不复制 `robot_state_publisher` 和 RViz2 节点配置，保持模型显示细节归属 `robot_description`。
 - 已按用户提醒补齐 `ros2_learning_notes.md` 的第 3 周第 1/2/3 小课正文学习笔记；后续进入第 4 周时继续按这个标准维护。
+- 第 4 周新增 `robot_simulation` 包，职责只覆盖 Gazebo world、bridge 配置和仿真 launch；URDF/Xacro 继续归 `robot_description`，统一系统入口后续再由 `robot_bringup` include。
+- 第 4 周第 1 小课先只桥接 `/clock`，不放机器人、不接 `/cmd_vel`、`/odom`、`/scan` 或相机，目的是先确认 Gazebo 与 ROS 2 的最小通信链路。
+- 用户已安装 `ros-jazzy-ros-gz`；当前环境可发现 `gz`、`ros_gz_sim` 和 `ros_gz_bridge`。
 
 Verification:
 
@@ -147,11 +157,25 @@ Verification:
 - 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_bringup display_robot.launch.py --show-args`，确认 bringup 入口 launch 可加载。
 - 已运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_interfaces turtlesim_p_controller robot_bringup tf2_frame_demo robot_description`，5 个包构建通过。
 - 已运行 `git diff --check`，无空白错误。
+- 已按 TDD 先新增 `src/robot_simulation/test/test_simulation_assets.py`，首次运行 `python3 -m unittest discover -s src/robot_simulation/test` 失败 6 项，失败原因均为目标资产不存在。
+- 已补齐 `robot_simulation` 包后重新运行 `python3 -m unittest discover -s src/robot_simulation/test`，6 个测试通过。
+- 已运行 `python3 -m unittest discover -s src/robot_bringup/test`，4 个测试通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && PYTHONPATH=src/robot_description:$PYTHONPATH python3 -m unittest discover -s src/robot_description/test`，8 个测试通过。
+- 已运行 `python3 -m compileall src/robot_simulation src/robot_bringup`，语法检查通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_interfaces turtlesim_p_controller robot_bringup tf2_frame_demo robot_description robot_simulation`，6 个包构建通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 pkg prefix robot_simulation`，确认新包可发现。
+- 安装 `ros-jazzy-ros-gz` 后，已运行 `source /opt/ros/jazzy/setup.bash && command -v gz && ros2 pkg prefix ros_gz_sim && ros2 pkg prefix ros_gz_bridge`，确认 `gz=/opt/ros/jazzy/opt/gz_tools_vendor/bin/gz`，两个 ROS 包均在 `/opt/ros/jazzy`。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_simulation gazebo_empty_world.launch.py --show-args`，launch 参数可正常显示。
+- 已实际启动 `ros2 launch robot_simulation gazebo_empty_world.launch.py`，Gazebo 和 `parameter_bridge` 进程启动，日志显示创建 `[/clock (gz.msgs.Clock) -> /clock (rosgraph_msgs/msg/Clock)]`。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && timeout 10s ros2 topic echo /clock --once`，成功输出仿真时间，例如 `sec: 255`。
+- 已运行 `source /opt/ros/jazzy/setup.bash && gz topic -l | head -40`，能看到 `/world/diffbot_empty_world/...` 和 `/clock` 等 Gazebo Transport topic。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 node list --no-daemon`，能看到 `/clock_bridge`。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && timeout 10s ros2 topic info /clock --verbose --no-daemon`，确认 `/clock` 的 publisher 为 `clock_bridge`，类型为 `rosgraph_msgs/msg/Clock`。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 topic list | sort | grep -E "^/clock$|^/parameter_events$|^/rosout$"`，能看到 `/clock`。
 
 Remaining tasks:
 
-- 带用户实操第 3 周第 3 小课：`ros2 launch robot_bringup display_robot.launch.py`，在 RViz2 观察 RobotModel/TF，并用 `xacro`、`tf2_echo` 检查模型。
-- 若用户确认已理解，可进入第 3 周后续：Gazebo 前置模型准备、可动 joint / `joint_state_publisher`，或开始第 4 周 Gazebo 仿真。
+- 第 4 周第 2 小课再把差速小车放进 Gazebo，并桥接 `/cmd_vel` 和 `/odom`。
 
 Key files:
 
@@ -197,8 +221,43 @@ Key files:
 - `src/robot_description/setup.py`
 - `src/robot_description/test/test_robot_description_assets.py`
 - `src/robot_bringup/launch/display_robot.launch.py`
+- `src/robot_simulation/WEEK_04_01_GAZEBO_ENVIRONMENT.md`
+- `src/robot_simulation/launch/gazebo_empty_world.launch.py`
+- `src/robot_simulation/worlds/empty_diffbot.world.sdf`
+- `src/robot_simulation/config/clock_bridge.yaml`
+- `src/robot_simulation/package.xml`
+- `src/robot_simulation/setup.py`
+- `src/robot_simulation/test/test_simulation_assets.py`
 
 ## Session Notes
+
+### 2026-06-12
+
+- Progress/result checkpoint:
+  - 用户确认开始第 4 周 Gazebo。
+  - 已创建 `robot_simulation` 包，并完成第 4 周第 1 小课：Gazebo Harmonic 与 `ros_gz` 最小链路。
+  - 新增空世界 `empty_diffbot.world.sdf`、`/clock` bridge 配置 `clock_bridge.yaml`、启动入口 `gazebo_empty_world.launch.py` 和讲义 `WEEK_04_01_GAZEBO_ENVIRONMENT.md`。
+  - 已更新 `README.md` 和 `ros2_learning_notes.md`，延续每课同步总学习笔记的要求。
+  - 当前机器最初未安装 `gz`、`ros_gz_sim`、`ros_gz_bridge`；用户已在终端安装 `ros-jazzy-ros-gz`，随后完成实际 Gazebo 验证。
+- Verification:
+  - TDD RED：`python3 -m unittest discover -s src/robot_simulation/test` 首次失败 6 项，原因均为资产不存在。
+  - GREEN：`python3 -m unittest discover -s src/robot_simulation/test` 通过，6 个测试。
+  - `python3 -m unittest discover -s src/robot_bringup/test` 通过，4 个测试。
+  - `source /opt/ros/jazzy/setup.bash && PYTHONPATH=src/robot_description:$PYTHONPATH python3 -m unittest discover -s src/robot_description/test` 通过，8 个测试。
+  - `python3 -m compileall src/robot_simulation src/robot_bringup` 通过。
+  - `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_interfaces turtlesim_p_controller robot_bringup tf2_frame_demo robot_description robot_simulation` 通过，6 个包。
+  - `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 pkg prefix robot_simulation` 输出 `/home/sheepyjb/ros/install/robot_simulation`。
+  - 安装前 `ros2 launch robot_simulation gazebo_empty_world.launch.py --show-args` 失败于缺 `ros_gz_sim`，不是新包构建失败。
+  - 安装后 `command -v gz` 输出 `/opt/ros/jazzy/opt/gz_tools_vendor/bin/gz`，`ros2 pkg prefix ros_gz_sim` 和 `ros2 pkg prefix ros_gz_bridge` 均输出 `/opt/ros/jazzy`。
+  - 安装后 `ros2 launch robot_simulation gazebo_empty_world.launch.py --show-args` 通过。
+  - 实际启动 Gazebo 后，launch 日志显示 `clock_bridge` 创建 `GZ->ROS Bridge: [/clock (gz.msgs.Clock) -> /clock (rosgraph_msgs/msg/Clock)]`。
+  - `ros2 topic echo /clock --once` 成功输出仿真时间。
+  - `gz topic -l` 能看到 `/world/diffbot_empty_world/...` topic。
+  - `ros2 node list --no-daemon` 能看到 `/clock_bridge`。
+  - `ros2 topic info /clock --verbose --no-daemon` 确认 `/clock` 的 publisher 是 `clock_bridge`。
+  - 默认 `ros2 topic list` 能看到 `/clock`、`/parameter_events` 和 `/rosout`。
+- Next:
+  - 进入第 4 周第 2 小课：把差速小车放入 Gazebo，加入差速驱动插件，桥接 `/cmd_vel` 和 `/odom`。
 
 ### 2026-06-12
 

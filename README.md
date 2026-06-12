@@ -16,6 +16,7 @@
     ├── robot_bringup/
     ├── robot_description/
     ├── robot_interfaces/
+    ├── robot_simulation/
     ├── tf2_frame_demo/
     └── turtlesim_p_controller/
 ```
@@ -121,6 +122,38 @@ laser_link
 
 ```bash
 xacro src/robot_description/urdf/diffbot.urdf.xacro
+```
+
+第 4 周进入 Gazebo 仿真。先确认是否安装 Gazebo Harmonic 和 ROS-Gazebo bridge：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+command -v gz
+ros2 pkg prefix ros_gz_sim
+ros2 pkg prefix ros_gz_bridge
+```
+
+如果 `ros_gz_sim` 或 `ros_gz_bridge` 找不到，先安装：
+
+```bash
+sudo apt update
+sudo apt install ros-jazzy-ros-gz
+```
+
+启动第 4 周第 1 小课的 Gazebo 空世界和 `/clock` bridge：
+
+```bash
+colcon build --packages-select robot_simulation
+source install/setup.bash
+ros2 launch robot_simulation gazebo_empty_world.launch.py
+```
+
+另开终端检查仿真时间是否桥接到 ROS 2：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 topic echo /clock --once
 ```
 
 参数默认值在：

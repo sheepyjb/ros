@@ -4,6 +4,24 @@
 
 Symptom:
 
+- 开始第 4 周 Gazebo 时，`command -v gz` 无输出，`ros2 pkg prefix ros_gz_sim` 和 `ros2 pkg prefix ros_gz_bridge` 找不到包；运行 `robot_simulation` 的 Gazebo launch 会报 `PackageNotFoundError: "package 'ros_gz_sim' not found"`。
+
+Root cause:
+
+- 当前 ROS 2 Jazzy 环境尚未安装 Gazebo Harmonic/ROS-Gazebo bridge 运行包；推荐入口 `ros-jazzy-ros-gz` 需要通过 apt 安装。
+
+Fix:
+
+- 用户已在终端执行安装。安装后重新 `source /opt/ros/jazzy/setup.bash`，`command -v gz`、`ros2 pkg prefix ros_gz_sim` 和 `ros2 pkg prefix ros_gz_bridge` 均正常。
+
+Prevention note:
+
+- 第 4 周后续实际启动 Gazebo 前，先检查 `command -v gz`、`ros2 pkg prefix ros_gz_sim` 和 `ros2 pkg prefix ros_gz_bridge`。如果以后换机器或重装环境，Codex 无法输入交互式 sudo 密码，系统包安装仍需用户执行。
+
+## 2026-06-12
+
+Symptom:
+
 - `README.md` 和课程讲义已更新，但 `ros2_learning_notes.md` 只更新了顶部进度，没有补充对应小课的正文学习笔记，用户在 VS Code 中发现总笔记缺失。
 
 Root cause:
