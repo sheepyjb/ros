@@ -15,6 +15,7 @@ class BringupAssetsTest(unittest.TestCase):
         self.assertTrue((PACKAGE_ROOT / "setup.py").is_file())
         self.assertTrue((PACKAGE_ROOT / "resource" / "robot_bringup").is_file())
         self.assertTrue((PACKAGE_ROOT / "launch" / "turtlesim_goal.launch.py").is_file())
+        self.assertTrue((PACKAGE_ROOT / "launch" / "display_robot.launch.py").is_file())
 
     def test_setup_installs_launch_files(self):
         setup_path = PACKAGE_ROOT / "setup.py"
@@ -46,7 +47,24 @@ class BringupAssetsTest(unittest.TestCase):
 
         self.assertIn("turtlesim", dependencies)
         self.assertIn("turtlesim_p_controller", dependencies)
+        self.assertIn("robot_description", dependencies)
         self.assertIn("launch_ros", dependencies)
+
+    def test_display_robot_launch_includes_robot_description_display(self):
+        launch_path = PACKAGE_ROOT / "launch" / "display_robot.launch.py"
+        if not launch_path.is_file():
+            self.fail("robot_bringup/launch/display_robot.launch.py should exist")
+
+        launch_tree = ast.parse(launch_path.read_text(encoding="utf-8"))
+        string_literals = {
+            node.value
+            for node in ast.walk(launch_tree)
+            if isinstance(node, ast.Constant) and isinstance(node.value, str)
+        }
+
+        self.assertIn("robot_description", string_literals)
+        self.assertIn("display.launch.py", string_literals)
+        self.assertIn("IncludeLaunchDescription", launch_path.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

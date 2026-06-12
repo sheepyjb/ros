@@ -103,6 +103,8 @@
 - 第 2 小课创建 `urdf/diffbot.urdf`，用 URDF 描述简化差速小车的 `base_link`、左右轮、摄像头和雷达 frame。
 - 第 2 小课的正式 RViz2 配置保存为 `src/robot_description/rviz/display.rviz`。
 - 当前环境没有安装 `joint_state_publisher` / `joint_state_publisher_gui`，所以本课先把轮子、摄像头和雷达都作为 fixed joint 观察，后续 Gazebo 和控制课再引入轮子真实旋转和 `/joint_states`。
+- 第 3 周第 3 小课开始，新增 `diffbot.urdf.xacro`、`diffbot_materials.xacro` 和 `diffbot_components.xacro`。
+- 第 3 小课把模型尺寸、颜色和重复组件拆成 Xacro property/macro/include，并新增 `robot_bringup/launch/display_robot.launch.py` 作为推荐模型显示入口。
 
 第 3 周第 1 小课运行：
 
@@ -121,13 +123,25 @@ rviz2
 ros2 run tf2_tools view_frames
 ```
 
-第 3 周第 2 小课运行：
+第 3 周第 2/3 小课运行：
 
 ```bash
 source /opt/ros/jazzy/setup.bash
-colcon build --packages-select robot_description
+colcon build --packages-select robot_description robot_bringup
 source install/setup.bash
+ros2 launch robot_bringup display_robot.launch.py
+```
+
+直接启动模型包入口也可以：
+
+```bash
 ros2 launch robot_description display.launch.py
+```
+
+检查 Xacro 展开：
+
+```bash
+xacro src/robot_description/urdf/diffbot.urdf.xacro
 ```
 
 查看模型 frame：
@@ -435,6 +449,253 @@ ros2 service call /set_goal robot_interfaces/srv/SetGoal "{x: 2.0, y: 8.0}"
 ros2 interface show 能看到接口，只说明 robot_interfaces 构建好了。
 ros2 service list 能看到 /set_goal，才说明控制器节点真的启动了这个服务。
 如果 service call 一直 waiting for service，需要重启 launch。
+```
+
+## 第 3 周第 1 小课学习笔记：tf2 与坐标系入门
+
+新增 package：
+
+```text
+src/tf2_frame_demo
+```
+
+核心理解：
+
+```text
+frame 是一个坐标系
+transform 是两个 frame 之间的位置和姿态关系
+TF 树把多个 transform 串起来
+tf2 可以沿 TF 树推导间接坐标关系
+```
+
+本课 TF 树：
+
+```text
+map
+└── odom
+    └── base_link
+        └── camera_link
+```
+
+其中：
+
+```text
+map -> odom 是静态 transform
+odom -> base_link 是动态 transform
+base_link -> camera_link 是静态 transform
+```
+
+运行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd /home/sheepyjb/ros
+colcon build --packages-select tf2_frame_demo
+source install/setup.bash
+ros2 launch tf2_frame_demo tf2_demo.launch.py
+```
+
+查看 TF：
+
+```bash
+ros2 run tf2_ros tf2_echo map camera_link
+ros2 run tf2_tools view_frames
+rviz2
+```
+
+RViz2 观察重点：
+
+```text
+Fixed Frame 设置为 map
+添加 TF display
+观察 base_link 绕 odom 运动
+观察 camera_link 跟随 base_link
+```
+
+关键区别：
+
+```text
+上一阶段 turtlesim 的 /pose 是单个对象的位置消息
+tf2 关注的是多个坐标系之间的关系
+机器人系统中传感器、底盘、地图、里程计都要靠 TF 对齐
+```
+
+## 第 3 周第 2 小课学习笔记：robot_description 与 URDF
+
+新增 package：
+
+```text
+src/robot_description
+```
+
+新增核心文件：
+
+```text
+src/robot_description/urdf/diffbot.urdf
+src/robot_description/launch/display.launch.py
+src/robot_description/rviz/display.rviz
+src/robot_description/WEEK_03_02_ROBOT_DESCRIPTION_URDF.md
+```
+
+核心理解：
+
+```text
+URDF 描述机器人由哪些 link 组成
+joint 描述父 link 和子 link 的连接关系
+robot_state_publisher 根据 URDF 发布 TF
+RViz2 的 RobotModel 根据 /robot_description 显示模型
+```
+
+本课模型：
+
+```text
+base_link
+├── left_wheel_link
+├── right_wheel_link
+├── camera_link
+│   └── camera_optical_frame
+└── laser_link
+```
+
+运行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd /home/sheepyjb/ros
+colcon build --packages-select robot_description
+source install/setup.bash
+ros2 launch robot_description display.launch.py
+```
+
+检查模型 frame：
+
+```bash
+ros2 run tf2_ros tf2_echo base_link camera_link
+ros2 run tf2_ros tf2_echo base_link laser_link
+ros2 run tf2_ros tf2_echo camera_link camera_optical_frame
+ros2 run tf2_tools view_frames
+```
+
+本课暂时全部使用 fixed joint：
+
+```text
+fixed joint 不需要 /joint_states
+适合先学习传感器和轮子 frame 的安装关系
+轮子真实旋转后续 Gazebo 和控制课程再引入
+```
+
+`camera_optical_frame` 的意义：
+
+```text
+普通机器人坐标系通常是 x 前、y 左、z 上
+相机光学坐标系通常是 z 前、x 右、y 下
+camera_optical_frame 用来提前适配图像算法和相机消息约定
+```
+
+## 第 3 周第 3 小课学习笔记：Xacro 与可复用 bringup
+
+新增核心文件：
+
+```text
+src/robot_description/urdf/diffbot.urdf.xacro
+src/robot_description/urdf/diffbot_materials.xacro
+src/robot_description/urdf/diffbot_components.xacro
+src/robot_description/WEEK_03_03_XACRO_AND_BRINGUP.md
+src/robot_bringup/launch/display_robot.launch.py
+```
+
+核心理解：
+
+```text
+Xacro 是生成 URDF 的模板语言
+Xacro 展开后仍然是普通 URDF
+robot_state_publisher 最终接收的仍然是 robot_description 字符串
+```
+
+上一课链路：
+
+```text
+diffbot.urdf -> robot_state_publisher -> /robot_description + /tf_static -> RViz
+```
+
+本课链路：
+
+```text
+diffbot.urdf.xacro -> xacro 展开成 URDF -> robot_state_publisher -> /robot_description + /tf_static -> RViz
+```
+
+三个 Xacro 概念：
+
+```text
+xacro:property：给尺寸、质量、安装位置命名
+xacro:macro：把重复结构做成模板
+xacro:include：把模型拆成多个文件复用
+```
+
+本课文件职责：
+
+```text
+diffbot.urdf.xacro 是顶层模型入口
+diffbot_materials.xacro 集中定义颜色材质
+diffbot_components.xacro 集中定义轮子、摄像头、雷达组件宏
+```
+
+推荐运行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd /home/sheepyjb/ros
+colcon build --packages-select robot_description robot_bringup
+source install/setup.bash
+ros2 launch robot_bringup display_robot.launch.py
+```
+
+直接运行模型包入口也可以：
+
+```bash
+ros2 launch robot_description display.launch.py
+```
+
+检查 Xacro 展开：
+
+```bash
+xacro src/robot_description/urdf/diffbot.urdf.xacro
+```
+
+检查 TF：
+
+```bash
+ros2 topic echo /tf_static --once
+ros2 run tf2_ros tf2_echo base_link camera_link
+ros2 run tf2_ros tf2_echo base_link laser_link
+```
+
+本课和上一课的区别：
+
+```text
+RViz 里看到的模型基本一样
+区别在于模型文件更可维护、更可复用
+尺寸参数不再散落在 XML 中
+左右轮等重复结构由 macro 生成
+系统推荐从 robot_bringup 统一启动
+```
+
+本课实操确认：
+
+```text
+xacro 能展开 diffbot.urdf.xacro
+/robot_state_publisher 正常启动
+/robot_description 存在
+/tf_static 中能看到 base_link 到 camera_link、laser_link、left_wheel_link、right_wheel_link 的固定 transform
+RViz2 的 RobotModel 和 TF display 可以观察同一套模型
+```
+
+注意：
+
+```text
+当前 Jazzy 的 xacro 命令不支持 xacro --version
+验证 Xacro 是否安装，用 ros2 pkg prefix xacro
+如果 RViz 显示 No tf data，先查 ros2 node list、/tf_static 和 robot_state_publisher 是否存在
 ```
 
 ## 每周复盘模板

@@ -10,7 +10,8 @@ Current goal:
 - 第 2 周工作空间、包和接口学习已完成。
 - 第 3 周第 1 小课：tf2 与 ROS 2 坐标系入门已完成。
 - 第 3 周第 2 小课：`robot_description`、URDF、轮子、摄像头和雷达 frame 已完成并实操验证。
-- 下一步新对话开始第 3 周第 3 小课：Xacro、可复用 RViz/bringup 启动和更完整模型组织。
+- 第 3 周第 3 小课：Xacro、可复用 RViz/bringup 启动和更完整模型组织已完成代码与讲义准备。
+- 下一步带用户实操第 3 周第 3 小课：运行 bringup 模型显示入口、检查 Xacro 展开和 RViz/TF。
 
 Completed work:
 
@@ -69,6 +70,17 @@ Completed work:
 - 为 `diffbot.urdf` 补充教学注释，覆盖 `robot/link/joint/visual/collision/inertial/origin/geometry/material/mass/inertia/axis` 等 URDF 常见字段。
 - 将 `robot_description` 的 RViz RobotModel 描述 topic QoS 改为 `Durability Policy: Transient Local`，避免 RViz 错过 `/robot_description`。
 - 将第 1 周和第 3 周第 1 小课的“知识问答”统一为“问题 N / 参考答案”格式，第 3 周第 2 小课已保持该格式。
+- 用户安装并验证 `ros-jazzy-xacro`，`ros2 pkg prefix xacro` 输出 `/opt/ros/jazzy`。
+- 新增 `src/robot_description/urdf/diffbot.urdf.xacro`，作为第 3 周第 3 小课顶层 Xacro 模型。
+- 新增 `src/robot_description/urdf/diffbot_materials.xacro`，集中定义 `body_blue`、`wheel_dark`、`camera_green`、`laser_red` 材质。
+- 新增 `src/robot_description/urdf/diffbot_components.xacro`，集中定义左右轮、摄像头和雷达组件宏。
+- 更新 `src/robot_description/launch/display.launch.py`，通过 `xacro.process_file()` 从 `diffbot.urdf.xacro` 生成 `robot_description`。
+- 更新 `src/robot_description/setup.py` 和 `package.xml`，安装 `*.xacro` 并声明 `xacro` 运行依赖。
+- 新增 `src/robot_bringup/launch/display_robot.launch.py`，include `robot_description/launch/display.launch.py`，作为推荐模型显示入口。
+- 更新 `src/robot_bringup/package.xml`，声明对 `robot_description` 的运行依赖。
+- 创建第 3 周第 3 小课讲义 `src/robot_description/WEEK_03_03_XACRO_AND_BRINGUP.md`。
+- 更新 `README.md`、`ros2_learning_notes.md`、`src/robot_description/README.md` 和 `src/robot_bringup/README.md`，加入 Xacro 与 bringup 显示入口说明。
+- 扩展 `test_robot_description_assets.py` 和 `test_bringup_assets.py`，覆盖 Xacro 文件、依赖、launch 处理和 bringup include 入口。
 
 Important decisions:
 
@@ -77,6 +89,7 @@ Important decisions:
 - 控制数学与 ROS 2 节点分离，原因是数学逻辑可以在没有 ROS 2 的环境中验证。
 - 文档命名规则：整周课件使用 `WEEK_01_...`；第二周起的小课使用 `WEEK_02_01_...`、`WEEK_02_02_...`。
 - 后续每一课都要配套练习题、观察问题、知识问答、参考答案和验收标准。
+- 后续每一课结束时必须同步更新 `ros2_learning_notes.md` 的正文学习笔记；不能只更新顶部进度或 README。
 - 第 2 周第 1 小课先在原 `turtlesim_p_controller` 包内学习 launch/config，暂不新建 `robot_bringup`；后续小课再迁移到 bringup 包，降低概念密度。
 - launch/config 是运行时资产，必须通过 `setup.py` 的 `data_files` 安装到 `install/<package>/share/<package>/`，否则 `ros2 launch` 找不到。
 - 第 2 周调整为 3 节课：第 1 节 launch 与参数 YAML；第 2 节 `robot_bringup` 与工作空间组织；第 3 节自定义接口与综合练习。
@@ -91,6 +104,10 @@ Important decisions:
 - 当前环境没有安装 `joint_state_publisher` / `joint_state_publisher_gui`；第 3 周第 2 小课先把轮子、摄像头和雷达都建模为 `fixed` joint，重点理解 URDF 如何生成固定 frame。轮子真实旋转和 `/joint_states` 后续在 Gazebo/控制课再引入。
 - `camera_optical_frame` 通过 `camera_optical_joint` 挂在 `camera_link` 下，用于提前建立相机光学坐标系概念。
 - 继续保留 RViz RobotModel 的 `Description Source: Topic`，因为它更贴近真实 ROS 2 链路：URDF -> `robot_state_publisher` -> `/robot_description` + `/tf_static` -> RViz。
+- `diffbot.urdf` 保留为第 3 周第 2 小课普通 URDF 对照文件；第 3 周第 3 小课开始，运行入口默认使用 `diffbot.urdf.xacro` 生成模型。
+- Xacro 文件拆分为顶层模型、材质、组件宏三类，避免一开始引入更深目录层级导致安装和 include 路径复杂化。
+- `robot_bringup/display_robot.launch.py` 通过 include 复用 `robot_description/display.launch.py`，不复制 `robot_state_publisher` 和 RViz2 节点配置，保持模型显示细节归属 `robot_description`。
+- 已按用户提醒补齐 `ros2_learning_notes.md` 的第 3 周第 1/2/3 小课正文学习笔记；后续进入第 4 周时继续按这个标准维护。
 
 Verification:
 
@@ -120,10 +137,21 @@ Verification:
 - 已实际运行 turtlesim 图形窗口和控制器节点。
 - 已使用 `/reset` 服务验证 service 调用。
 - 已使用 rqt_graph 观察 `/turtlesim` 和 `/turtle_goal_controller` 的 topic 连接关系。
+- 已运行 `source /opt/ros/jazzy/setup.bash && python3 -m unittest discover -s src/robot_description/test`，8 个测试通过。
+- 已运行 `python3 -m unittest discover -s src/robot_bringup/test`，4 个测试通过。
+- 已运行 `python3 -m compileall src/robot_description src/robot_bringup`，语法检查通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && xacro src/robot_description/urdf/diffbot.urdf.xacro -o /tmp/diffbot_from_xacro.urdf`，Xacro 展开成功。
+- 已运行 `source /opt/ros/jazzy/setup.bash && check_urdf /tmp/diffbot_from_xacro.urdf`，URDF 解析通过，根 link 为 `base_link`，有 4 个直接子 link。
+- 已运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_description robot_bringup`，两个包构建通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_description display.launch.py --show-args`，确认模型包 launch 可加载。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_bringup display_robot.launch.py --show-args`，确认 bringup 入口 launch 可加载。
+- 已运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_interfaces turtlesim_p_controller robot_bringup tf2_frame_demo robot_description`，5 个包构建通过。
+- 已运行 `git diff --check`，无空白错误。
 
 Remaining tasks:
 
-- 新对话开始第 3 周第 3 小课：Xacro、可复用 RViz/bringup 启动和更完整模型组织。
+- 带用户实操第 3 周第 3 小课：`ros2 launch robot_bringup display_robot.launch.py`，在 RViz2 观察 RobotModel/TF，并用 `xacro`、`tf2_echo` 检查模型。
+- 若用户确认已理解，可进入第 3 周后续：Gazebo 前置模型准备、可动 joint / `joint_state_publisher`，或开始第 4 周 Gazebo 仿真。
 
 Key files:
 
@@ -158,14 +186,40 @@ Key files:
 - `src/tf2_frame_demo/test/test_tf2_frame_demo_assets.py`
 - `src/tf2_frame_demo/test/test_node_shutdown.py`
 - `src/robot_description/WEEK_03_02_ROBOT_DESCRIPTION_URDF.md`
+- `src/robot_description/WEEK_03_03_XACRO_AND_BRINGUP.md`
 - `src/robot_description/launch/display.launch.py`
 - `src/robot_description/urdf/diffbot.urdf`
+- `src/robot_description/urdf/diffbot.urdf.xacro`
+- `src/robot_description/urdf/diffbot_materials.xacro`
+- `src/robot_description/urdf/diffbot_components.xacro`
 - `src/robot_description/rviz/display.rviz`
 - `src/robot_description/package.xml`
 - `src/robot_description/setup.py`
 - `src/robot_description/test/test_robot_description_assets.py`
+- `src/robot_bringup/launch/display_robot.launch.py`
 
 ## Session Notes
+
+### 2026-06-12
+
+- Progress/result checkpoint:
+  - 用户安装 `ros-jazzy-xacro`，`ros2 pkg prefix xacro` 已可发现包；`xacro --version` 在当前 Jazzy 版本不支持，已在讲义中说明。
+  - 第 3 周第 3 小课代码与讲义已准备完成：新增 Xacro 顶层模型、材质文件、组件宏文件和 bringup 模型显示入口。
+  - `robot_description/display.launch.py` 已改为从 `diffbot.urdf.xacro` 生成 `robot_description`。
+  - `robot_bringup/display_robot.launch.py` include `robot_description/display.launch.py`，推荐后续从 bringup 启动模型显示。
+  - 已更新 README、总学习笔记、两个包 README 和本课测试。
+- Verification:
+  - `source /opt/ros/jazzy/setup.bash && python3 -m unittest discover -s src/robot_description/test` 通过，8 个测试。
+  - `python3 -m unittest discover -s src/robot_bringup/test` 通过，4 个测试。
+  - `python3 -m compileall src/robot_description src/robot_bringup` 通过。
+  - `source /opt/ros/jazzy/setup.bash && xacro src/robot_description/urdf/diffbot.urdf.xacro -o /tmp/diffbot_from_xacro.urdf` 通过。
+  - `source /opt/ros/jazzy/setup.bash && check_urdf /tmp/diffbot_from_xacro.urdf` 通过，根 link 为 `base_link`。
+  - `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_interfaces turtlesim_p_controller robot_bringup tf2_frame_demo robot_description` 通过。
+  - `ros2 launch robot_description display.launch.py --show-args` 和 `ros2 launch robot_bringup display_robot.launch.py --show-args` 均通过。
+  - 用户提醒 `ros2_learning_notes.md` 正文学习笔记没有持续更新；已补齐第 3 周第 1/2/3 小课独立笔记，并记录为后续流程要求。
+- Next:
+  - 带用户运行 `ros2 launch robot_bringup display_robot.launch.py`，在 RViz2 中确认模型显示与上一课一致。
+  - 带用户运行 `xacro src/robot_description/urdf/diffbot.urdf.xacro`、`tf2_echo base_link camera_link`、`tf2_echo base_link laser_link`，理解 Xacro 展开后仍是 URDF/TF。
 
 ### 2026-06-12
 

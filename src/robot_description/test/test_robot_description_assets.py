@@ -1,4 +1,5 @@
 import ast
+import subprocess
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -17,8 +18,12 @@ class RobotDescriptionAssetsTest(unittest.TestCase):
         self.assertTrue((PACKAGE_ROOT / "resource" / "robot_description").is_file())
         self.assertTrue((PACKAGE_ROOT / "launch" / "display.launch.py").is_file())
         self.assertTrue((PACKAGE_ROOT / "urdf" / "diffbot.urdf").is_file())
+        self.assertTrue((PACKAGE_ROOT / "urdf" / "diffbot.urdf.xacro").is_file())
+        self.assertTrue((PACKAGE_ROOT / "urdf" / "diffbot_materials.xacro").is_file())
+        self.assertTrue((PACKAGE_ROOT / "urdf" / "diffbot_components.xacro").is_file())
         self.assertTrue((PACKAGE_ROOT / "rviz" / "display.rviz").is_file())
         self.assertTrue((PACKAGE_ROOT / "WEEK_03_02_ROBOT_DESCRIPTION_URDF.md").is_file())
+        self.assertTrue((PACKAGE_ROOT / "WEEK_03_03_XACRO_AND_BRINGUP.md").is_file())
 
     def test_setup_installs_description_assets(self):
         setup_path = PACKAGE_ROOT / "setup.py"
@@ -34,6 +39,7 @@ class RobotDescriptionAssetsTest(unittest.TestCase):
 
         self.assertIn("launch/*.launch.py", string_literals)
         self.assertIn("urdf/*.urdf", string_literals)
+        self.assertIn("urdf/*.xacro", string_literals)
         self.assertIn("rviz/*.rviz", string_literals)
 
     def test_package_declares_display_dependencies(self):
@@ -52,25 +58,30 @@ class RobotDescriptionAssetsTest(unittest.TestCase):
 
         self.assertIn("ament_index_python", dependencies)
         self.assertIn("launch_ros", dependencies)
+        self.assertIn("xacro", dependencies)
         self.assertNotIn("joint_state_publisher", dependencies)
         self.assertNotIn("joint_state_publisher_gui", dependencies)
         self.assertIn("robot_state_publisher", dependencies)
         self.assertIn("rviz2", dependencies)
 
-    def test_launch_uses_robot_state_publisher_only(self):
+    def test_launch_processes_xacro_and_uses_robot_state_publisher_only(self):
         launch_path = PACKAGE_ROOT / "launch" / "display.launch.py"
         if not launch_path.is_file():
             self.fail("robot_description/launch/display.launch.py should exist")
 
-        launch_tree = ast.parse(launch_path.read_text(encoding="utf-8"))
+        launch_source = launch_path.read_text(encoding="utf-8")
+        launch_tree = ast.parse(launch_source)
         string_literals = {
             node.value
             for node in ast.walk(launch_tree)
             if isinstance(node, ast.Constant) and isinstance(node.value, str)
         }
 
+        self.assertIn("diffbot.urdf.xacro", string_literals)
         self.assertIn("robot_state_publisher", string_literals)
         self.assertIn("rviz2", string_literals)
+        self.assertIn("xacro", launch_source)
+        self.assertIn("process_file", launch_source)
         self.assertNotIn("joint_state_publisher", string_literals)
         self.assertNotIn("joint_state_publisher_gui", string_literals)
 
@@ -130,6 +141,48 @@ class RobotDescriptionAssetsTest(unittest.TestCase):
         self.assertEqual("fixed", joints["camera_optical_joint"].attrib["type"])
         self.assertEqual("fixed", joints["laser_joint"].attrib["type"])
 
+        self.assertEqual("base_link", joints["camera_joint"].find("parent").attrib["link"])
+        self.assertEqual("camera_link", joints["camera_optical_joint"].find("parent").attrib["link"])
+        self.assertEqual("base_link", joints["laser_joint"].find("parent").attrib["link"])
+
+    def test_xacro_generates_robot_links_and_frames(self):
+        xacro_path = PACKAGE_ROOT / "urdf" / "diffbot.urdf.xacro"
+        if not xacro_path.is_file():
+            self.fail("robot_description/urdf/diffbot.urdf.xacro should exist")
+
+        completed = subprocess.run(
+            ["xacro", str(xacro_path)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        robot = ET.fromstring(completed.stdout)
+
+        self.assertEqual("robot", robot.tag)
+        self.assertEqual("diffbot", robot.attrib["name"])
+
+        links = {link.attrib["name"] for link in robot.findall("link")}
+        joints = {joint.attrib["name"]: joint for joint in robot.findall("joint")}
+
+        self.assertEqual(
+            {
+                "base_link",
+                "left_wheel_link",
+                "right_wheel_link",
+                "camera_link",
+                "camera_optical_frame",
+                "laser_link",
+            },
+            links,
+        )
+        self.assertEqual("fixed", joints["left_wheel_joint"].attrib["type"])
+        self.assertEqual("fixed", joints["right_wheel_joint"].attrib["type"])
+        self.assertEqual("fixed", joints["camera_joint"].attrib["type"])
+        self.assertEqual("fixed", joints["camera_optical_joint"].attrib["type"])
+        self.assertEqual("fixed", joints["laser_joint"].attrib["type"])
+
+        self.assertEqual("base_link", joints["left_wheel_joint"].find("parent").attrib["link"])
+        self.assertEqual("base_link", joints["right_wheel_joint"].find("parent").attrib["link"])
         self.assertEqual("base_link", joints["camera_joint"].find("parent").attrib["link"])
         self.assertEqual("camera_link", joints["camera_optical_joint"].find("parent").attrib["link"])
         self.assertEqual("base_link", joints["laser_joint"].find("parent").attrib["link"])

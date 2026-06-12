@@ -4,6 +4,42 @@
 
 Symptom:
 
+- `README.md` 和课程讲义已更新，但 `ros2_learning_notes.md` 只更新了顶部进度，没有补充对应小课的正文学习笔记，用户在 VS Code 中发现总笔记缺失。
+
+Root cause:
+
+- 结束课程时只检查了入口说明和交接记录，没有把 `ros2_learning_notes.md` 作为每节课的必改成果物检查。
+
+Fix:
+
+- 已补齐 `ros2_learning_notes.md` 中第 3 周第 1/2/3 小课学习笔记，并在 `CODEX_CONTEXT.md` 记录后续每课结束必须同步更新正文学习笔记。
+
+Prevention note:
+
+- 每节课提交前检查三类文档：课程讲义 `WEEK_*.md`、总学习笔记 `ros2_learning_notes.md`、入口说明 `README.md`。
+
+## 2026-06-12
+
+Symptom:
+
+- 安装 `ros-jazzy-xacro` 后运行 `xacro --version`，命令返回 `xacro: error: no such option: --version`。
+
+Root cause:
+
+- 当前 ROS 2 Jazzy 环境中的 `xacro` 命令不提供 `--version` 选项；这不是安装失败。
+
+Fix:
+
+- 用 `source /opt/ros/jazzy/setup.bash && ros2 pkg prefix xacro` 验证包是否可发现；实际处理文件时用 `xacro <input-file>` 或 `xacro <input-file> -o <output-file>`。
+
+Prevention note:
+
+- 后续检查 Xacro 环境时不要依赖 `xacro --version`；优先检查 `ros2 pkg prefix xacro` 和一次最小 Xacro 展开命令。
+
+## 2026-06-12
+
+Symptom:
+
 - RViz2 中 `RobotModel` 显示 `Status: Ok`，但画面一开始只有 Grid，看不到模型；展开 `TF -> Frames` 也可能暂时为空。
 
 Root cause:

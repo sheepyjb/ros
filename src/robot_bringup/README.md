@@ -10,6 +10,12 @@
 ros2 launch robot_bringup turtlesim_goal.launch.py
 ```
 
+第 3 周第 3 小课开始，模型显示也可以从 bringup 入口启动：
+
+```bash
+ros2 launch robot_bringup display_robot.launch.py
+```
+
 本节讲义：
 
 ```text

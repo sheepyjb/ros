@@ -92,15 +92,21 @@ rviz2
 
 打开后设置 `Fixed Frame = map`，再添加 `TF` display。
 
-第 3 周第 2 节进入 `robot_description` 和 URDF：
+第 3 周第 2 节进入 `robot_description` 和 URDF，第 3 节把模型升级为 Xacro 并接入 bringup：
 
 ```bash
-colcon build --packages-select robot_description
+colcon build --packages-select robot_description robot_bringup
 source install/setup.bash
+ros2 launch robot_bringup display_robot.launch.py
+```
+
+也可以直接启动模型包入口：
+
+```bash
 ros2 launch robot_description display.launch.py
 ```
 
-这个 launch 会启动 `robot_state_publisher` 和 RViz2，用 `src/robot_description/urdf/diffbot.urdf` 显示简化差速小车，并观察：
+这个 launch 会启动 `robot_state_publisher` 和 RViz2，用 `src/robot_description/urdf/diffbot.urdf.xacro` 生成简化差速小车模型，并观察：
 
 ```text
 base_link
@@ -109,6 +115,12 @@ right_wheel_link
 camera_link
 camera_optical_frame
 laser_link
+```
+
+单独检查 Xacro 展开：
+
+```bash
+xacro src/robot_description/urdf/diffbot.urdf.xacro
 ```
 
 参数默认值在：
