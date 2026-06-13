@@ -12,7 +12,8 @@ Current goal:
 - 第 3 周第 2 小课：`robot_description`、URDF、轮子、摄像头和雷达 frame 已完成并实操验证。
 - 第 3 周第 3 小课：Xacro、可复用 RViz/bringup 启动和更完整模型组织已完成代码与讲义准备。
 - 第 4 周第 1 小课：Gazebo Harmonic 与 `ros_gz` 最小链路已完成代码、讲义和实机验证。
-- 下一步进入第 4 周第 2 小课：把差速小车放进 Gazebo，并桥接 `/cmd_vel` 和 `/odom`。
+- 第 4 周第 2 小课：差速小车 Gazebo 运动、`/cmd_vel` 和 `/odom` bridge 已完成代码、讲义和实机验证。
+- 下一步进入第 4 周第 3 小课：加入雷达、相机、TF/RViz 同步显示。
 
 Completed work:
 
@@ -88,6 +89,11 @@ Completed work:
 - 新增 `src/robot_simulation/launch/gazebo_empty_world.launch.py`，include `ros_gz_sim/gz_sim.launch.py` 并启动 `ros_gz_bridge/parameter_bridge`。
 - 创建第 4 周第 1 小课讲义 `src/robot_simulation/WEEK_04_01_GAZEBO_ENVIRONMENT.md`。
 - 更新 `README.md` 和 `ros2_learning_notes.md`，加入第 4 周 Gazebo 环境检查、安装、空世界启动和 `/clock` 检查步骤。
+- 新增 `src/robot_simulation/worlds/diffbot_drive.world.sdf`，在 Gazebo SDF world 中定义可运动差速小车模型。
+- 新增 `src/robot_simulation/config/diff_drive_bridge.yaml`，桥接 `/clock`、ROS->Gazebo `/cmd_vel` 和 Gazebo->ROS `/odom`。
+- 新增 `src/robot_simulation/launch/diffbot_drive.launch.py`，启动差速小车 world 和 bridge。
+- 创建第 4 周第 2 小课讲义 `src/robot_simulation/WEEK_04_02_DIFFBOT_DRIVE_IN_GAZEBO.md`。
+- 更新 `README.md`、`ros2_learning_notes.md` 和 `src/robot_simulation/README.md`，加入第二课运行和验证步骤。
 
 Important decisions:
 
@@ -118,6 +124,9 @@ Important decisions:
 - 第 4 周新增 `robot_simulation` 包，职责只覆盖 Gazebo world、bridge 配置和仿真 launch；URDF/Xacro 继续归 `robot_description`，统一系统入口后续再由 `robot_bringup` include。
 - 第 4 周第 1 小课先只桥接 `/clock`，不放机器人、不接 `/cmd_vel`、`/odom`、`/scan` 或相机，目的是先确认 Gazebo 与 ROS 2 的最小通信链路。
 - 用户已安装 `ros-jazzy-ros-gz`；当前环境可发现 `gz`、`ros_gz_sim` 和 `ros_gz_bridge`。
+- 第 4 周第 2 小课先用 SDF 直接定义 Gazebo 可动小车，暂不从 `robot_description` 的 URDF/Xacro 生成 Gazebo 模型；原因是本课重点是物理 joint、DiffDrive 插件和 bridge 方向。
+- 第 4 周第 2 小课只桥接 `/cmd_vel` 与 `/odom`，不引入雷达、相机或 RViz；这些留到第 4 周第 3 小课，避免一次引入过多链路。
+- 第 4 周第 2 小课采用 `x` 向前、`y` 向左、`z` 向上的常见 ROS 坐标约定；左右轮轴沿 `y` 方向，因此 `left_wheel_joint` 和 `right_wheel_joint` 的 `<axis><xyz>` 固定为 `0 1 0`。wheel link 本身不 roll，只有 visual/collision 圆柱局部 pose 使用 `1.5708 0 0` 把 cylinder 轴转到 `y` 方向。
 
 Verification:
 
@@ -172,10 +181,30 @@ Verification:
 - 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 node list --no-daemon`，能看到 `/clock_bridge`。
 - 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && timeout 10s ros2 topic info /clock --verbose --no-daemon`，确认 `/clock` 的 publisher 为 `clock_bridge`，类型为 `rosgraph_msgs/msg/Clock`。
 - 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 topic list | sort | grep -E "^/clock$|^/parameter_events$|^/rosout$"`，能看到 `/clock`。
+- 第 4 周第 2 小课 TDD RED：扩展 `src/robot_simulation/test/test_simulation_assets.py` 后运行 `python3 -m unittest discover -s src/robot_simulation/test`，失败 5 项，原因包括 `diffbot_drive.world.sdf`、`diff_drive_bridge.yaml`、`diffbot_drive.launch.py`、第二课讲义和消息依赖不存在。
+- 第 4 周第 2 小课 GREEN：补齐资产后运行 `python3 -m unittest discover -s src/robot_simulation/test`，9 个测试通过。
+- 已运行 `python3 -m compileall src/robot_simulation`，语法检查通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_simulation`，构建通过。
+- 已运行 `git diff --check`，无空白错误。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_simulation diffbot_drive.launch.py --show-args`，launch 参数可正常显示。
+- 已运行 `source /opt/ros/jazzy/setup.bash && gz sdf -k src/robot_simulation/worlds/diffbot_drive.world.sdf`，SDF 输出 `Valid.`。
+- 已实际启动 `ros2 launch robot_simulation diffbot_drive.launch.py`，日志显示 bridge 创建 `/clock`、`/cmd_vel`、`/odom` 三条链路。
+- 已运行 `ros2 topic list | sort | grep -E "^/clock$|^/cmd_vel$|^/odom$"`，确认 ROS 侧有 `/clock`、`/cmd_vel` 和 `/odom`。
+- 已运行 `gz topic -l | grep -E "^/cmd_vel$|^/odom$|diffbot_drive_world"`，确认 Gazebo 侧有 `/cmd_vel`、`/odom` 和 `diffbot_drive_world` 相关 topic。
+- 已运行 `timeout 10s ros2 topic echo /odom --once`，初始 `position.x` 近似 0，`frame_id=odom`，`child_frame_id=base_link`。
+- 已运行 `timeout 4s ros2 topic pub --rate 10 /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.25}, angular: {z: 0.0}}"` 发布前进命令，然后发布停止命令。
+- 运动后再次运行 `timeout 10s ros2 topic echo /odom --once`，`position.x` 约为 `6.7435`，证明小车响应 `/cmd_vel` 且 `/odom` 回传有效。
+- 用户指出轮子不应绕 `z` 轴转；已核对当前 SDF 使用 `0 1 0`，并在 `test_simulation_assets.py` 增加断言锁定左右轮 joint axis 为 `0 1 0`。
+- 用户进一步指出 Gazebo 视觉中轮子像“平着转”；已确认原写法把 wheel link 自身 roll `1.5708`，容易让 link frame 和几何姿态混在一起。已改为 wheel link pose 不旋转，visual/collision 圆柱局部 pose 使用 `1.5708 0 0`，用户目视确认修正后轮子姿态正确。
+- 已重新运行 `python3 -m unittest discover -s src/robot_simulation/test`，9 个测试通过。
+- 已重新运行 `python3 -m compileall src/robot_simulation`，语法检查通过。
+- 已重新运行 `source /opt/ros/jazzy/setup.bash && gz sdf -k src/robot_simulation/worlds/diffbot_drive.world.sdf`，输出 `Valid.`。
+- 已重新运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_simulation`，构建通过。
+- 已停止验证用 Gazebo launch，`parameter_bridge` clean exit。
 
 Remaining tasks:
 
-- 第 4 周第 2 小课再把差速小车放进 Gazebo，并桥接 `/cmd_vel` 和 `/odom`。
+- 第 4 周第 3 小课加入雷达、相机、TF/RViz 同步显示。
 
 Key files:
 
@@ -225,11 +254,40 @@ Key files:
 - `src/robot_simulation/launch/gazebo_empty_world.launch.py`
 - `src/robot_simulation/worlds/empty_diffbot.world.sdf`
 - `src/robot_simulation/config/clock_bridge.yaml`
+- `src/robot_simulation/WEEK_04_02_DIFFBOT_DRIVE_IN_GAZEBO.md`
+- `src/robot_simulation/launch/diffbot_drive.launch.py`
+- `src/robot_simulation/worlds/diffbot_drive.world.sdf`
+- `src/robot_simulation/config/diff_drive_bridge.yaml`
 - `src/robot_simulation/package.xml`
 - `src/robot_simulation/setup.py`
 - `src/robot_simulation/test/test_simulation_assets.py`
 
 ## Session Notes
+
+### 2026-06-12
+
+- Progress/result checkpoint:
+  - 用户要求提交第 4 周第 1 小课并开始第二课。
+  - 已提交第 4 周第 1 小课，提交 `6755c39 Add week 4 Gazebo environment lesson`。
+  - 已完成第 4 周第 2 小课：可运动差速小车 Gazebo world、DiffDrive 插件、`/cmd_vel` 和 `/odom` bridge、课程讲义和总文档更新。
+  - 第二课采用直接 SDF 小车，不复用第 3 周 URDF/Xacro；该决策已记录为本课边界。
+  - 已记录 SDF `<canonical_link>` 警告和 install 资产需重建的坑点到 `CODEX_PITFALLS.md`。
+- Verification:
+  - `python3 -m unittest discover -s src/robot_simulation/test` RED 阶段失败 5 项，随后 GREEN 阶段通过 9 个测试。
+  - `python3 -m compileall src/robot_simulation` 通过。
+  - `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_simulation` 通过。
+  - `git diff --check` 通过。
+  - `ros2 launch robot_simulation diffbot_drive.launch.py --show-args` 通过。
+  - `gz sdf -k src/robot_simulation/worlds/diffbot_drive.world.sdf` 输出 `Valid.`。
+  - 实际启动 `ros2 launch robot_simulation diffbot_drive.launch.py` 后，bridge 日志显示 `/clock` GZ->ROS、`/cmd_vel` ROS->GZ、`/odom` GZ->ROS 三条链路创建成功。
+  - `ros2 topic list` 能看到 `/clock`、`/cmd_vel`、`/odom`。
+  - `gz topic -l` 能看到 `/cmd_vel`、`/odom` 和 `/world/diffbot_drive_world/...`。
+  - 初始 `/odom` 的 `position.x` 近似 0；发布 `/cmd_vel` 前进命令后，`/odom` 的 `position.x` 约为 `6.7435`，并已发送停止命令。
+  - 用户质疑轮子轴向，已确认本课 SDF 中轮子 joint axis 是 `0 1 0` 而不是 `0 0 1`；讲义已补充解释，并用测试断言锁定。
+  - 用户继续指出轮子视觉姿态像平着转；已将 wheel link pose 从 `0 +/-0.18 0.07 1.5708 0 0` 改为 `0 +/-0.18 0.07 0 0 0`，并把 `1.5708 0 0` 放到 wheel visual/collision 的局部 pose。用户确认“现在是对的了”。
+  - 轴向说明补充后，`python3 -m unittest discover -s src/robot_simulation/test`、`python3 -m compileall src/robot_simulation`、`gz sdf -k src/robot_simulation/worlds/diffbot_drive.world.sdf` 和 `colcon build --packages-select robot_simulation` 均通过。
+- Next:
+  - 第 4 周第 3 小课：接入雷达、相机、TF 和 RViz。
 
 ### 2026-06-12
 

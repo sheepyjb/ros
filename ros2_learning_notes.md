@@ -210,6 +210,32 @@ ros2 topic echo /clock --once
 gz topic -l
 ```
 
+第 4 周第 2 小课开始，新增可运动差速小车仿真：
+
+- 新增 `worlds/diffbot_drive.world.sdf`，直接在 Gazebo SDF world 中定义最小可动 `diffbot`。
+- 左右轮 joint 改为 `revolute`，并由 Gazebo `DiffDrive` 插件控制。
+- 新增 `config/diff_drive_bridge.yaml`，桥接 `/clock`、`/cmd_vel` 和 `/odom`。
+- 新增 `launch/diffbot_drive.launch.py`，启动可运动小车 world 和 bridge。
+- 本课只验证 `/cmd_vel` 控制与 `/odom` 回传，雷达、相机和 RViz 放到下一课。
+
+第 4 周第 2 小课运行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select robot_simulation
+source install/setup.bash
+ros2 launch robot_simulation diffbot_drive.launch.py
+```
+
+另开终端发送速度命令：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.25}, angular: {z: 0.0}}"
+ros2 topic echo /odom --once
+```
+
 ### 第 5 周：YOLO 接入 ROS 2
 
 目标：把已有 YOLO 能力封装成 ROS 2 节点。

@@ -9,3 +9,10 @@
 - `launch/`：仿真启动入口。
 
 机器人几何模型仍归 `robot_description`；统一系统入口后续归 `robot_bringup`。
+
+当前课程入口：
+
+```bash
+ros2 launch robot_simulation gazebo_empty_world.launch.py
+ros2 launch robot_simulation diffbot_drive.launch.py
+```

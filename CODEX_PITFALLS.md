@@ -1,5 +1,41 @@
 # CODEX_PITFALLS
 
+## 2026-06-13
+
+Symptom:
+
+- 第 4 周第 2 小课差速小车能前进，`/odom` 也变化，但 Gazebo 视觉中轮子看起来像“平着转”，不符合直观的向前滚动效果。
+
+Root cause:
+
+- 最初把 wheel link 自身 pose 写成 `0 +/-0.18 0.07 1.5708 0 0`，导致 link frame 和 wheel cylinder 几何姿态混在一起。DiffDrive 运动链路仍能工作，但视觉/坐标解释不清晰。
+
+Fix:
+
+- 将 wheel link pose 改成 `0 +/-0.18 0.07 0 0 0`，并在 wheel 的 `visual` 和 `collision` 内部增加局部 pose `0 0 0 1.5708 0 0`，只旋转圆柱几何，让 cylinder 轴沿 `y` 方向。
+
+Prevention note:
+
+- Gazebo cylinder 默认沿局部 `z` 轴拉长。差速车按 ROS 坐标约定 `x` 向前、`y` 向左、`z` 向上时，轮轴应沿 `y`；优先保持 wheel link frame 不旋转，只旋转 visual/collision 几何。修改 world 后必须重新 `colcon build --packages-select robot_simulation`，因为 launch 使用 `install/` 下的 world。
+
+## 2026-06-12
+
+Symptom:
+
+- `gz sdf -k src/robot_simulation/worlds/diffbot_drive.world.sdf` 显示 `Valid.`，但同时警告 `XML Element[canonical_link], child of element[model], not defined in SDF`；实际 launch 也重复出现同样警告。
+
+Root cause:
+
+- 在当前 Gazebo Harmonic / SDF 解析器里，`<canonical_link>` 不是 `model` 下可直接使用的子元素；而且 launch 使用的是 `install/` 里的 world 文件，源码修改后必须重新 `colcon build` 才会生效。
+
+Fix:
+
+- 从 `diffbot_drive.world.sdf` 移除 `<canonical_link>`，重新 `colcon build --packages-select robot_simulation` 后再启动 launch。
+
+Prevention note:
+
+- 修改 `worlds/*.sdf` 后，先运行 `gz sdf -k <world>` 检查警告，再重建包；不要只看源码文件，以免 launch 仍加载旧的 `install/` 资产。
+
 ## 2026-06-12
 
 Symptom:

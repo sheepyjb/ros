@@ -156,6 +156,23 @@ source install/setup.bash
 ros2 topic echo /clock --once
 ```
 
+第 4 周第 2 小课启动可运动差速小车：
+
+```bash
+colcon build --packages-select robot_simulation
+source install/setup.bash
+ros2 launch robot_simulation diffbot_drive.launch.py
+```
+
+另开终端发送速度命令并查看里程计：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.25}, angular: {z: 0.0}}"
+ros2 topic echo /odom --once
+```
+
 参数默认值在：
 
 ```text
