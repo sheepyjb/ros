@@ -23,3 +23,9 @@ ros2 launch robot_perception color_detector.launch.py
 ros2 launch robot_simulation diffbot_sensors_rviz.launch.py
 ros2 launch robot_perception yolo_detector.launch.py
 ```
+
+当前仿真世界里有一个 STOP 标志牌，默认 `yolov8n.pt` 可用 `stop sign` 类别验证：
+
+```bash
+ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:="stop sign"
+```

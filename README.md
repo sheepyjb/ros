@@ -238,11 +238,17 @@ source install/setup.bash
 ros2 launch robot_perception yolo_detector.launch.py
 ```
 
+`diffbot_sensors.world.sdf` 中包含一个面向相机的 STOP 标志牌，可用默认 `yolov8n.pt` 验证：
+
+```bash
+ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:="stop sign"
+```
+
 常用覆盖参数：
 
 ```bash
 ros2 launch robot_perception yolo_detector.launch.py yolo_confidence_threshold:=0.5
-ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:=person
+ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:="stop sign"
 ```
 
 参数默认值在：

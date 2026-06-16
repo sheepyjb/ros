@@ -301,6 +301,7 @@ i 前进，, 后退，j 左转，l 右转，k 停止。
 - 第 5 周第 2 小课接入真实 YOLO 后端，`image_detector_node` 通过 `detector_backend:=color|yolo` 在颜色检测和 YOLO 检测之间切换。
 - 新增 `robot_perception/yolo_detector.py`，把 Ultralytics YOLO 输出转换成现有 `DetectionResult` 和 `TargetDetection.msg` 合约。
 - 新增 `config/yolo_detector.yaml` 和 `launch/yolo_detector.launch.py`，保存 YOLO 模型、置信度阈值和目标类别过滤参数。
+- `robot_simulation/worlds/diffbot_sensors.world.sdf` 中新增 `yolo_stop_sign_board`，用 STOP 标志牌验证默认 COCO YOLO 模型。
 
 第 5 周第 1 小课运行：
 
@@ -359,7 +360,7 @@ ros2 launch robot_perception yolo_detector.launch.py
 
 ```bash
 ros2 launch robot_perception yolo_detector.launch.py yolo_confidence_threshold:=0.5
-ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:=person
+ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:="stop sign"
 ```
 
 ### 第 6 周：控制理论落地
@@ -998,12 +999,26 @@ source install/setup.bash
 ros2 launch robot_perception yolo_detector.launch.py
 ```
 
+当前仿真世界中有一个面向相机的 STOP 标志牌：
+
+```text
+robot_simulation/worlds/diffbot_sensors.world.sdf
+model name="yolo_stop_sign_board"
+texture: materials/textures/yolo_stop_sign.png
+```
+
+用默认 `yolov8n.pt` 验证时，推荐只保留 `stop sign` 类别：
+
+```bash
+ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:="stop sign"
+```
+
 关键参数：
 
 ```text
 yolo_model_path：模型名或本地 .pt 权重路径
 yolo_confidence_threshold：低于该置信度的框会被忽略
-yolo_target_class：空字符串接受任意类别，设置 person 等类别名可做过滤
+yolo_target_class：空字符串接受任意类别，设置 stop sign 等类别名可做过滤
 ```
 
 本课要重点理解：

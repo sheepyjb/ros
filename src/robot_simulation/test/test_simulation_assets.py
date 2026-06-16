@@ -25,6 +25,7 @@ class RobotSimulationAssetsTest(unittest.TestCase):
         self.assertTrue((PACKAGE_ROOT / "config" / "clock_bridge.yaml").is_file())
         self.assertTrue((PACKAGE_ROOT / "config" / "diff_drive_bridge.yaml").is_file())
         self.assertTrue((PACKAGE_ROOT / "config" / "sensor_bridge.yaml").is_file())
+        self.assertTrue((PACKAGE_ROOT / "materials" / "textures" / "yolo_stop_sign.png").is_file())
         self.assertTrue((PACKAGE_ROOT / "rviz" / "sensors.rviz").is_file())
         self.assertTrue((PACKAGE_ROOT / "WEEK_04_01_GAZEBO_ENVIRONMENT.md").is_file())
         self.assertTrue((PACKAGE_ROOT / "WEEK_04_02_DIFFBOT_DRIVE_IN_GAZEBO.md").is_file())
@@ -45,6 +46,7 @@ class RobotSimulationAssetsTest(unittest.TestCase):
         self.assertIn("launch/*.launch.py", string_literals)
         self.assertIn("worlds/*.sdf", string_literals)
         self.assertIn("config/*.yaml", string_literals)
+        self.assertIn("materials/textures/*.png", string_literals)
         self.assertIn("rviz/*.rviz", string_literals)
 
     def test_package_declares_gazebo_dependencies(self):
@@ -278,6 +280,24 @@ class RobotSimulationAssetsTest(unittest.TestCase):
         obstacle_names = {model.attrib["name"] for model in world.findall("model")}
         self.assertIn("front_box", obstacle_names)
         self.assertIn("left_cylinder", obstacle_names)
+        self.assertIn("yolo_stop_sign_board", obstacle_names)
+
+        stop_sign = world.find("model[@name='yolo_stop_sign_board']")
+        self.assertIsNotNone(stop_sign)
+        self.assertEqual("true", stop_sign.find("static").text)
+        self.assertEqual("1.35 0 0.60 0 0 0", stop_sign.find("pose").text)
+
+        stop_sign_link = stop_sign.find("link[@name='sign_link']")
+        self.assertIsNotNone(stop_sign_link)
+        stop_sign_visual = stop_sign_link.find("visual[@name='stop_sign_visual']")
+        self.assertIsNotNone(stop_sign_visual)
+        self.assertEqual("0 0 0 0 -1.5708 0", stop_sign_visual.find("pose").text)
+        self.assertEqual("0 0 1", stop_sign_visual.find("geometry/plane/normal").text)
+        self.assertEqual("0.90 0.90", stop_sign_visual.find("geometry/plane/size").text)
+        self.assertEqual(
+            "../materials/textures/yolo_stop_sign.png",
+            stop_sign_visual.find("material/pbr/metal/albedo_map").text,
+        )
 
     def test_sensor_bridge_connects_motion_sensor_and_tf_topics(self):
         config_path = PACKAGE_ROOT / "config" / "sensor_bridge.yaml"

@@ -17,6 +17,7 @@ Current goal:
 - 第 4 周第 2/3 小课 Gazebo 小车已从单后 caster 改为前后两个 caster，修复原地转向时绕轮轴翘起的问题。
 - 第 5 周第 1 小课：ROS 2 图像订阅、`cv_bridge`、OpenCV 颜色目标检测和 `/target_detection` 发布链路已完成代码、讲义和验证。
 - 第 5 周第 2 小课：同一个 `image_detector_node` 已支持 `detector_backend:=color|yolo`，真实 Ultralytics YOLO 后端接入代码、launch/config、讲义和验证已完成。
+- 第 5 周第 2 小课仿真补强：`diffbot_sensors.world.sdf` 已新增 YOLO 可识别的 STOP 标志牌，验证时推荐 `yolo_target_class:="stop sign"`。
 - 下一步在用户正常 WSL 终端创建 `.venv_yolo` 并安装 `ultralytics`，再实际启动 Gazebo + YOLO 后端观察 `/target_detection`。
 
 Completed work:
@@ -122,6 +123,9 @@ Completed work:
 - 新增第 5 周第 2 小课讲义 `src/robot_perception/WEEK_05_02_YOLO_BACKEND.md`，说明 WSL `.venv_yolo --system-site-packages`、YOLO 参数和运行流程。
 - 更新 `.gitignore` 忽略 `.venv_yolo/`，避免后续安装 YOLO 依赖污染 Git 状态。
 - 更新 `README.md`、`ros2_learning_notes.md` 和 `src/robot_perception/README.md`，加入第 5 周第 2 小课入口和正文学习笔记。
+- 新增 `src/robot_simulation/materials/textures/yolo_stop_sign.png`，作为 Gazebo 中的 STOP 标志牌纹理。
+- 更新 `src/robot_simulation/worlds/diffbot_sensors.world.sdf`，新增静态 `yolo_stop_sign_board`，放在相机正前方用于默认 COCO YOLO 模型验证。
+- 更新 `src/robot_simulation/setup.py`，安装 `materials/textures/*.png` 到 package share。
 
 Important decisions:
 
@@ -281,10 +285,18 @@ Verification:
 - 已运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_interfaces robot_perception`，2 个包构建通过。
 - 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_perception yolo_detector.launch.py --show-args`，确认 `use_sim_time`、`yolo_model_path`、`yolo_confidence_threshold` 和 `yolo_target_class` 参数可加载。
 - 已运行 `git check-ignore -q .venv_yolo/ && echo ignored`，确认 `.venv_yolo/` 会被 Git 忽略。
+- STOP 标志牌补强 RED：扩展 `src/robot_simulation/test/test_simulation_assets.py` 后运行 `source /opt/ros/jazzy/setup.bash && PYTHONPATH=src/robot_simulation:$PYTHONPATH python3 -m unittest src/robot_simulation/test/test_simulation_assets.py`，失败原因是 `yolo_stop_sign.png`、`yolo_stop_sign_board` 和 setup 安装声明不存在。
+- STOP 标志牌补强 GREEN：补齐纹理、world 模型和 setup 安装声明后，同一资产测试 14 项通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && PYTHONPATH=src/robot_simulation:$PYTHONPATH python3 -m unittest discover -s src/robot_simulation/test`，15 个测试通过。
+- 已运行 `python3 -m compileall src/robot_simulation`，语法检查通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && gz sdf -k src/robot_simulation/worlds/diffbot_sensors.world.sdf`，输出 `Valid.`。
+- 已运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_simulation`，构建通过。
+- 已确认 `install/robot_simulation/share/robot_simulation/materials/textures/yolo_stop_sign.png` 存在。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_simulation diffbot_sensors_rviz.launch.py --show-args`，主 launch 可加载。
 
 Remaining tasks:
 
-- 用户在正常 WSL 终端按 `src/robot_perception/WEEK_05_02_YOLO_BACKEND.md` 创建 `.venv_yolo`、安装 `ultralytics`，并实际运行 `ros2 launch robot_perception yolo_detector.launch.py`。
+- 用户在正常 WSL 终端按 `src/robot_perception/WEEK_05_02_YOLO_BACKEND.md` 创建 `.venv_yolo`、安装 `ultralytics`，并实际运行 `ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:="stop sign"`。
 - 首次使用 `yolov8n.pt` 可能需要联网下载权重；如需离线运行，改用本地 `.pt` 权重路径传给 `yolo_model_path`。
 - 实机验证 Gazebo + YOLO 后端时，观察 `/target_detection` 和 `/target_detection/debug_image`。
 
@@ -341,6 +353,7 @@ Key files:
 - `src/robot_simulation/worlds/diffbot_drive.world.sdf`
 - `src/robot_simulation/config/diff_drive_bridge.yaml`
 - `src/robot_simulation/config/sensor_bridge.yaml`
+- `src/robot_simulation/materials/textures/yolo_stop_sign.png`
 - `src/robot_simulation/launch/diffbot_sensors_rviz.launch.py`
 - `src/robot_simulation/robot_simulation/odom_to_tf.py`
 - `src/robot_simulation/rviz/sensors.rviz`
@@ -370,6 +383,21 @@ Key files:
 - `docs/superpowers/plans/2026-06-16-yolo-backend-implementation.md`
 
 ## Session Notes
+
+### 2026-06-16
+
+- Progress/result checkpoint:
+  - 用户希望在 Gazebo 场景中放一个默认 YOLO 能识别的目标，用于验证 `yolo_detector.launch.py`。
+  - 已选择 STOP 标志牌方案，原因是 `yolov8n.pt` 的 COCO 类别包含 `stop sign`，比简化 3D 椅子/瓶子更适合验证。
+  - 已新增 `yolo_stop_sign.png` 纹理，并在 `diffbot_sensors.world.sdf` 中新增面向相机的 `yolo_stop_sign_board`。
+  - 已把讲义和 README 示例改为 `yolo_target_class:="stop sign"`。
+- Verification:
+  - 仿真资产测试 15 项通过。
+  - `python3 -m compileall src/robot_simulation` 通过。
+  - `gz sdf -k src/robot_simulation/worlds/diffbot_sensors.world.sdf` 输出 `Valid.`。
+  - `colcon build --packages-select robot_simulation` 通过，并确认 STOP 纹理安装到 `install/`。
+- Next:
+  - 在正常 WSL 图形终端启动 Gazebo + YOLO，观察 `/target_detection` 是否输出 `label: stop sign`。
 
 ### 2026-06-16
 

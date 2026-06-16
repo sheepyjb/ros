@@ -101,6 +101,14 @@ ros2 launch robot_perception yolo_detector.launch.py
 ros2 topic echo /target_detection
 ```
 
+当前 `diffbot_sensors.world.sdf` 中已经放了一个面向相机的 `stop sign` 图片牌，用来验证默认 `yolov8n.pt`。
+
+如果只想看这个目标，可以启动时过滤类别：
+
+```bash
+ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:="stop sign"
+```
+
 首次使用 `yolov8n.pt` 时，Ultralytics 可能会联网下载模型权重。后续也可以换成本地权重路径：
 
 ```bash
@@ -120,13 +128,13 @@ src/robot_perception/config/yolo_detector.yaml
 - `detector_backend`：检测后端，本课为 `yolo`。
 - `yolo_model_path`：模型名或本地权重路径，默认 `yolov8n.pt`。
 - `yolo_confidence_threshold`：低于该置信度的框会被忽略，默认 `0.25`。
-- `yolo_target_class`：只保留指定类别；空字符串表示接受任意类别。
+- `yolo_target_class`：只保留指定类别；空字符串表示接受任意类别。当前仿真推荐设置为 `"stop sign"`。
 - `publish_debug_image`：是否发布画框后的图像。
 
-只检测 `person` 类别：
+只检测仿真里的 STOP 标志牌：
 
 ```bash
-ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:=person
+ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:="stop sign"
 ```
 
 提高置信度阈值：
@@ -155,7 +163,7 @@ Add -> By topic -> /target_detection/debug_image
 
 练习 4：把 `yolo_confidence_threshold` 从 `0.25` 改成 `0.5`，观察低置信度目标是否更容易被忽略。
 
-练习 5：设置 `yolo_target_class:=person`，观察非 person 类别是否被过滤。
+练习 5：设置 `yolo_target_class:="stop sign"`，观察仿真里的 STOP 标志牌是否被检测。
 
 ## 十、知识问答
 
@@ -207,4 +215,5 @@ Add -> By topic -> /target_detection/debug_image
 - 能启动 `robot_perception yolo_detector.launch.py`。
 - 能 echo 到 `/target_detection`。
 - 能在 RViz2 中看到 `/target_detection/debug_image`。
+- 能说明为什么当前仿真使用 `stop sign` 图片牌验证默认 COCO YOLO 模型。
 - 能解释 `yolo_confidence_threshold` 和 `yolo_target_class` 的作用。
