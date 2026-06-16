@@ -217,6 +217,13 @@ gz topic -l
 - 新增 `config/diff_drive_bridge.yaml`，桥接 `/clock`、`/cmd_vel` 和 `/odom`。
 - 新增 `launch/diffbot_drive.launch.py`，启动可运动小车 world 和 bridge。
 - 本课只验证 `/cmd_vel` 控制与 `/odom` 回传，雷达、相机和 RViz 放到下一课。
+- 第 4 周第 3 小课加入键盘控制、雷达、相机、TF 和 RViz 同步显示。
+- 新增 `worlds/diffbot_sensors.world.sdf`，在 Gazebo 小车上挂载 `front_lidar` 和 `front_camera`，并加入障碍物用于观察。
+- 新增 `config/sensor_bridge.yaml`，桥接 `/clock`、`/cmd_vel`、`/odom`、`/scan`、`/camera/image_raw` 和 `/camera/camera_info`。
+- 新增 `robot_simulation/odom_to_tf.py`，把 `/odom` 转成 `odom -> base_link` 动态 TF。
+- 新增 `rviz/sensors.rviz`，在 RViz 中同步显示 RobotModel、TF、LaserScan 和相机图像。
+- 本课键盘控制直接运行 `teleop_twist_keyboard`，不要通过 `ros2 launch` 后台启动，因为它需要读取真实交互终端的键盘输入。
+- Gazebo 小车使用前后两个 caster 小球辅助支撑；单后 caster 虽然看起来也有支撑，但原地转向时支撑区域太小，容易绕轮轴翘起。RViz 正常只说明显示链路正常，不代表 Gazebo 物理稳定。
 
 第 4 周第 2 小课运行：
 
@@ -235,6 +242,36 @@ source install/setup.bash
 ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.25}, angular: {z: 0.0}}"
 ros2 topic echo /odom --once
 ```
+
+第 4 周第 3 小课运行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select robot_description robot_simulation
+source install/setup.bash
+ros2 launch robot_simulation diffbot_sensors_rviz.launch.py
+```
+
+另开终端启动键盘控制：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
+```
+
+常用按键：
+
+```text
+i 前进，, 后退，j 左转，l 右转，k 停止。
+```
+
+本课要重点理解：
+
+- 键盘节点只发布 ROS 2 `/cmd_vel`，Gazebo 轮子仍由 DiffDrive 插件控制。
+- `/odom` 是消息，RViz 需要 TF，所以要用 `odom_to_tf` 发布 `odom -> base_link`。
+- `robot_state_publisher` 负责固定 TF，例如 `base_link -> laser_link` 和 `camera_link -> camera_optical_frame`。
+- 传感器消息的 `header.frame_id` 必须和 TF 树里的 frame 对齐，否则 RViz 无法知道数据在空间中的位置。
 
 ### 第 5 周：YOLO 接入 ROS 2
 

@@ -1,5 +1,41 @@
 # CODEX_PITFALLS
 
+## 2026-06-14
+
+Symptom:
+
+- Gazebo 中 `diffbot` 静止或直行基本正常，但原地转向后容易绕左右轮轴翘起；RViz 中模型姿态看起来仍正常。
+
+Root cause:
+
+- SDF 物理模型只有左右两个驱动轮和一个后方 caster，支撑区域前边界接近轮轴。车体加上传感器后的重心靠近支撑边界，原地转向时容易产生 pitch/roll。RViz 只显示 TF/模型，不参与 Gazebo 物理计算。
+
+Fix:
+
+- 将 Gazebo world 中的单个 `caster_link` 改成 `front_caster_link` 和 `rear_caster_link` 两个 ball joint 小球，分别位于 `x=0.16` 和 `x=-0.16`，扩大前后支撑区域。
+
+Prevention note:
+
+- 修改 Gazebo 车体结构时同时检查 collision、inertial 和接地点支撑区域；不要只用 RViz 姿态判断物理稳定性。修改 `worlds/*.sdf` 后重新 `colcon build --packages-select robot_simulation`，因为 launch 使用 `install/` 下的 world。
+
+## 2026-06-14
+
+Symptom:
+
+- `teleop_twist_keyboard` 通过 `ros2 launch` 启动时，即使 `Node(..., emulate_tty=True)`，仍报 `termios.error: (25, 'Inappropriate ioctl for device')`，无法读取键盘输入。
+
+Root cause:
+
+- `teleop_twist_keyboard` 需要直接读取真实交互终端的 stdin；launch 启动的子进程没有可用的交互式 stdin。该节点适合在单独终端中用 `ros2 run` 直接启动。
+
+Fix:
+
+- 删除 `diffbot_keyboard_teleop.launch.py`，第 4 周第 3 小课统一使用 `ros2 run teleop_twist_keyboard teleop_twist_keyboard` 作为键盘控制入口。
+
+Prevention note:
+
+- 后续需要键盘 teleop 时，不要把 `teleop_twist_keyboard` 包装进普通 launch。启动仿真/RViz 用 launch，键盘遥控用第二个真实终端直接 `ros2 run`。
+
 ## 2026-06-13
 
 Symptom:

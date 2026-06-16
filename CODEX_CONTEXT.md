@@ -2,7 +2,7 @@
 
 ## Latest Snapshot
 
-Date: 2026-06-12
+Date: 2026-06-16
 
 Current goal:
 
@@ -13,7 +13,9 @@ Current goal:
 - 第 3 周第 3 小课：Xacro、可复用 RViz/bringup 启动和更完整模型组织已完成代码与讲义准备。
 - 第 4 周第 1 小课：Gazebo Harmonic 与 `ros_gz` 最小链路已完成代码、讲义和实机验证。
 - 第 4 周第 2 小课：差速小车 Gazebo 运动、`/cmd_vel` 和 `/odom` bridge 已完成代码、讲义和实机验证。
-- 下一步进入第 4 周第 3 小课：加入雷达、相机、TF/RViz 同步显示。
+- 第 4 周第 3 小课：键盘控制、雷达、相机、TF/RViz 同步显示已完成代码、讲义和验证。
+- 第 4 周第 2/3 小课 Gazebo 小车已从单后 caster 改为前后两个 caster，修复原地转向时绕轮轴翘起的问题。
+- 下一步进入第 5 周：YOLO 接入 ROS 2 图像链路。
 
 Completed work:
 
@@ -94,6 +96,15 @@ Completed work:
 - 新增 `src/robot_simulation/launch/diffbot_drive.launch.py`，启动差速小车 world 和 bridge。
 - 创建第 4 周第 2 小课讲义 `src/robot_simulation/WEEK_04_02_DIFFBOT_DRIVE_IN_GAZEBO.md`。
 - 更新 `README.md`、`ros2_learning_notes.md` 和 `src/robot_simulation/README.md`，加入第二课运行和验证步骤。
+- 新增 `src/robot_simulation/worlds/diffbot_sensors.world.sdf`，在 Gazebo 小车上加入 `laser_link`、`camera_link`、`front_lidar`、`front_camera` 和两个障碍物。
+- 新增 `src/robot_simulation/config/sensor_bridge.yaml`，桥接 `/clock`、`/cmd_vel`、`/odom`、`/scan`、`/camera/image_raw` 和 `/camera/camera_info`。
+- 新增 `src/robot_simulation/robot_simulation/odom_to_tf.py`，把 `/odom` 转成 `odom -> base_link` 动态 TF。
+- 新增 `src/robot_simulation/rviz/sensors.rviz`，RViz 默认显示 RobotModel、TF、LaserScan 和相机图像，Fixed Frame 为 `odom`。
+- 新增第 4 周第 3 小课讲义 `src/robot_simulation/WEEK_04_03_SENSORS_TF_RVIZ.md`。
+- 更新 `README.md`、`ros2_learning_notes.md` 和 `src/robot_simulation/README.md`，加入第三课运行步骤和键盘 teleop 说明。
+- 扩展 `src/robot_simulation/test/test_simulation_assets.py` 并新增 `src/robot_simulation/test/test_odom_to_tf.py`，覆盖第三课资产和 odom->TF 转换。
+- 已删除不可用的 `diffbot_keyboard_teleop.launch.py` 方案；键盘控制统一用第二终端直接运行 `ros2 run teleop_twist_keyboard teleop_twist_keyboard`。
+- 将 `diffbot_drive.world.sdf` 和 `diffbot_sensors.world.sdf` 中的小车支撑从单后 caster 改为 `front_caster_link` + `rear_caster_link`，避免 Gazebo 原地转向时绕轮轴翘起。
 
 Important decisions:
 
@@ -127,6 +138,10 @@ Important decisions:
 - 第 4 周第 2 小课先用 SDF 直接定义 Gazebo 可动小车，暂不从 `robot_description` 的 URDF/Xacro 生成 Gazebo 模型；原因是本课重点是物理 joint、DiffDrive 插件和 bridge 方向。
 - 第 4 周第 2 小课只桥接 `/cmd_vel` 与 `/odom`，不引入雷达、相机或 RViz；这些留到第 4 周第 3 小课，避免一次引入过多链路。
 - 第 4 周第 2 小课采用 `x` 向前、`y` 向左、`z` 向上的常见 ROS 坐标约定；左右轮轴沿 `y` 方向，因此 `left_wheel_joint` 和 `right_wheel_joint` 的 `<axis><xyz>` 固定为 `0 1 0`。wheel link 本身不 roll，只有 visual/collision 圆柱局部 pose 使用 `1.5708 0 0` 把 cylinder 轴转到 `y` 方向。
+- 第 4 周第 3 小课继续使用单独 SDF world 承载 Gazebo 传感器；`robot_description` 的 Xacro 用于 ROS 侧 `robot_state_publisher` 发布固定 TF 和 RobotModel，不作为本课 Gazebo 模型来源。
+- `/odom` 不等于 `/tf`；新增 `odom_to_tf` 节点专门发布 `odom -> base_link`，传感器固定 frame 仍由 `robot_state_publisher` 发布。
+- `teleop_twist_keyboard` 需要真实交互终端 stdin，不能包装进普通 `ros2 launch`；课程中固定用第二终端直接 `ros2 run teleop_twist_keyboard teleop_twist_keyboard`。
+- Gazebo 物理稳定性要看 collision、inertial 和接地点支撑区域；RViz 姿态正常不代表 Gazebo 小车不会翻。第 4 周小车使用前后两个 caster 扩大支撑区域。
 
 Verification:
 
@@ -201,10 +216,30 @@ Verification:
 - 已重新运行 `source /opt/ros/jazzy/setup.bash && gz sdf -k src/robot_simulation/worlds/diffbot_drive.world.sdf`，输出 `Valid.`。
 - 已重新运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_simulation`，构建通过。
 - 已停止验证用 Gazebo launch，`parameter_bridge` clean exit。
+- 第 4 周第 3 小课 TDD RED：扩展资产测试并新增 `test_odom_to_tf.py` 后运行 `source /opt/ros/jazzy/setup.bash && PYTHONPATH=src/robot_simulation:$PYTHONPATH python3 -m unittest discover -s src/robot_simulation/test`，失败 9 项，原因均为第三课资产或 `odom_to_tf` 不存在。
+- 第 4 周第 3 小课 GREEN：补齐资产后重新运行同一测试命令，15 个测试通过。
+- 已运行 `python3 -m compileall src/robot_simulation`，语法检查通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && gz sdf -k src/robot_simulation/worlds/diffbot_sensors.world.sdf`，输出 `Valid.`。
+- 已运行 `git diff --check`，无空白错误。
+- 已运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_description robot_simulation`，两个包构建通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_simulation diffbot_sensors_rviz.launch.py --show-args`，主 launch 可加载。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 pkg executables robot_simulation`，确认入口为 `odom_to_tf`。
+- 已运行安装环境下的 `odometry_to_transform` 导入和转换检查，输出 `odom base_link 2.0`。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && xacro src/robot_description/urdf/diffbot.urdf.xacro -o /tmp/diffbot_week4_03.urdf && check_urdf /tmp/diffbot_week4_03.urdf`，URDF 解析通过。
+- 已在 PTY 中短时运行 `ros2 run teleop_twist_keyboard teleop_twist_keyboard`，进入键盘说明界面；当前沙箱仍有 DDS socket 权限噪声，但没有 `termios` 错误。
+- 已短时启动 `diffbot_sensors_rviz.launch.py`，确认 Gazebo、bridge、`robot_state_publisher`、`odom_to_tf` 和 RViz 进程均被创建；受当前沙箱无 GUI、DDS socket 限制和 `/home/sheepyjb/.gz` 日志写入限制影响，未完成完整 GUI/话题实机验证。
+- 用户反馈 Gazebo 中小车翘起后，已用 headless Gazebo 复现：静止和直行基本水平，持续原地转向后旧单后 caster 模型出现明显 pitch/roll。
+- caster 修复后已重新运行 `source /opt/ros/jazzy/setup.bash && PYTHONPATH=src/robot_simulation:$PYTHONPATH python3 -m unittest discover -s src/robot_simulation/test`，15 个测试通过。
+- caster 修复后已重新运行 `python3 -m compileall src/robot_simulation`，语法检查通过。
+- caster 修复后已重新运行 `source /opt/ros/jazzy/setup.bash && gz sdf -k src/robot_simulation/worlds/diffbot_drive.world.sdf` 和 `source /opt/ros/jazzy/setup.bash && gz sdf -k src/robot_simulation/worlds/diffbot_sensors.world.sdf`，均输出 `Valid.`。
+- caster 修复后已重新运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_simulation`，构建通过。
+- caster 修复后已重新运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_simulation diffbot_sensors_rviz.launch.py --show-args`，主 launch 可加载。
+- caster 修复后已运行 headless Gazebo 原地转向验证：转向后 `diffbot` orientation 的 `x=-1.092e-07`、`y=1.690e-07`，只剩 yaw 分量明显变化，没有再绕轮轴翘起。
+- 已运行 `git diff --check`，无空白错误。
 
 Remaining tasks:
 
-- 第 4 周第 3 小课加入雷达、相机、TF/RViz 同步显示。
+- 第 5 周开始接入 YOLO 图像处理链路。
 
 Key files:
 
@@ -258,11 +293,57 @@ Key files:
 - `src/robot_simulation/launch/diffbot_drive.launch.py`
 - `src/robot_simulation/worlds/diffbot_drive.world.sdf`
 - `src/robot_simulation/config/diff_drive_bridge.yaml`
+- `src/robot_simulation/config/sensor_bridge.yaml`
+- `src/robot_simulation/launch/diffbot_sensors_rviz.launch.py`
+- `src/robot_simulation/robot_simulation/odom_to_tf.py`
+- `src/robot_simulation/rviz/sensors.rviz`
+- `src/robot_simulation/worlds/diffbot_sensors.world.sdf`
+- `src/robot_simulation/WEEK_04_03_SENSORS_TF_RVIZ.md`
 - `src/robot_simulation/package.xml`
 - `src/robot_simulation/setup.py`
 - `src/robot_simulation/test/test_simulation_assets.py`
+- `src/robot_simulation/test/test_odom_to_tf.py`
 
 ## Session Notes
+
+### 2026-06-16
+
+- Progress/result checkpoint:
+  - 用户在桌面终端实际运行第 4 周第 3 小课后确认 Gazebo/RViz 已正常，之前小车翘起问题已解决。
+  - 第 4 周整体已完成，准备提交本次课程改动。
+- Verification:
+  - 本次提交前重新运行关键验证，结果记录在 Latest Snapshot 的 Verification 区域。
+- Next:
+  - 提交后进入第 5 周 YOLO 图像链路。
+
+### 2026-06-14
+
+- Progress/result checkpoint:
+  - 用户开始第 4 周第 3 小课，并指出键盘控制小车运动必须补上。
+  - 已完成第三课：`diffbot_sensors.world.sdf`、`sensor_bridge.yaml`、`diffbot_sensors_rviz.launch.py`、`odom_to_tf.py`、`sensors.rviz`、讲义和 README/总笔记更新。
+  - 已将键盘控制定为第二终端直接运行 `ros2 run teleop_twist_keyboard teleop_twist_keyboard`；验证普通 launch 启动 teleop 会触发 `termios.error`，已删除该 launch 方案并写入 `CODEX_PITFALLS.md`。
+  - 第三课主链路为：键盘 `/cmd_vel` -> Gazebo DiffDrive -> `/odom` -> `odom_to_tf` -> RViz，同时桥接 `/scan`、`/camera/image_raw` 和 `/camera/camera_info`。
+  - 用户上传截图指出 Gazebo 中小车会翘起，而 RViz 中正常。已确认这不是 RViz 显示问题，而是 Gazebo SDF 物理支撑问题。
+  - 根因是左右驱动轮加单后 caster 的支撑区域太小，前边界接近轮轴；传感器加到车体后，原地转向容易产生 pitch/roll。
+  - 已将 `diffbot_drive.world.sdf` 和 `diffbot_sensors.world.sdf` 改为前后两个 caster：`front_caster_link` 位于 `x=0.16`，`rear_caster_link` 位于 `x=-0.16`。
+- Verification:
+  - RED：`source /opt/ros/jazzy/setup.bash && PYTHONPATH=src/robot_simulation:$PYTHONPATH python3 -m unittest discover -s src/robot_simulation/test` 失败 9 项，原因是第三课目标资产和 `odom_to_tf` 尚不存在。
+  - GREEN：同一测试命令通过 15 个测试。
+  - `python3 -m compileall src/robot_simulation` 通过。
+  - `source /opt/ros/jazzy/setup.bash && gz sdf -k src/robot_simulation/worlds/diffbot_sensors.world.sdf` 输出 `Valid.`。
+  - `git diff --check` 通过。
+  - `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_description robot_simulation` 通过。
+  - `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_simulation diffbot_sensors_rviz.launch.py --show-args` 通过。
+  - `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 pkg executables robot_simulation` 输出 `robot_simulation odom_to_tf`。
+  - 安装环境下导入 `odometry_to_transform` 并转换测试消息，输出 `odom base_link 2.0`。
+  - `source /opt/ros/jazzy/setup.bash && source install/setup.bash && xacro src/robot_description/urdf/diffbot.urdf.xacro -o /tmp/diffbot_week4_03.urdf && check_urdf /tmp/diffbot_week4_03.urdf` 通过。
+  - PTY 中直接运行 `ros2 run teleop_twist_keyboard teleop_twist_keyboard` 能进入键盘说明界面，无 `termios` 错误。
+  - 当前沙箱无法完整 GUI 实机验证：RViz 无显示器、Gazebo 不能写 `~/.gz` 日志、DDS socket 权限受限。
+  - caster 修复后补充验证：15 个 `robot_simulation` 测试通过，`compileall` 通过，`gz sdf -k` 两个 world 均 `Valid.`，`colcon build --packages-select robot_simulation` 通过，主 launch `--show-args` 通过。
+  - caster 修复后 headless Gazebo 原地转向验证通过：转向后 `orientation.x/y` 保持在 `1e-7` 量级，未再出现明显 pitch/roll。
+- Next:
+  - 用户可在正常桌面终端运行第三课两个终端流程并目视确认 Gazebo/RViz 同步。
+  - 下一课进入第 5 周 YOLO 图像链路。
 
 ### 2026-06-12
 

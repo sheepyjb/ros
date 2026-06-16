@@ -7,6 +7,7 @@
 - `worlds/`：Gazebo world 文件。
 - `config/`：`ros_gz_bridge` 配置文件。
 - `launch/`：仿真启动入口。
+- `rviz/`：仿真调试用 RViz 配置。
 
 机器人几何模型仍归 `robot_description`；统一系统入口后续归 `robot_bringup`。
 
@@ -15,4 +16,6 @@
 ```bash
 ros2 launch robot_simulation gazebo_empty_world.launch.py
 ros2 launch robot_simulation diffbot_drive.launch.py
+ros2 launch robot_simulation diffbot_sensors_rviz.launch.py
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```

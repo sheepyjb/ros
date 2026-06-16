@@ -71,7 +71,7 @@ src/robot_simulation/worlds/diffbot_drive.world.sdf
 - `base_link` 车体。
 - `left_wheel_link` 和 `right_wheel_link` 两个轮子。
 - `left_wheel_joint` 和 `right_wheel_joint` 两个 `revolute` joint。
-- `caster_link` 辅助支撑小球。
+- `front_caster_link` 和 `rear_caster_link` 两个辅助支撑小球。
 - `gz::sim::systems::DiffDrive` 插件。
 
 本课采用 ROS 常见坐标约定：`x` 向前，`y` 向左，`z` 向上。左右轮的轮轴横穿车体，方向是左右方向，所以轮子 joint 的旋转轴写成：
@@ -92,6 +92,8 @@ src/robot_simulation/worlds/diffbot_drive.world.sdf
 还要注意，“轮子让车向前走”和“旋转轴向前”不是一回事。车向 `+x` 前进时，轮轴仍然沿 `y`；轮子绕 `y` 轴转，轮缘在接地点相对轮心向后，车体中心向前，这才是不打滑滚动的关系。也就是说，和前进方向一致的是轮子接地点产生的运动效果，不是旋转轴本身。
 
 如果看到别的 Gazebo 示例使用 `0 0 1`，通常是因为那个示例把轮子 link 的局部坐标系或圆柱几何方向摆成了另一种方式。判断标准不是死记 `z` 或 `y`，而是看轮轴在当前 link/joint 坐标系里沿哪个方向。
+
+前后两个 caster 分别放在 `x=0.16` 和 `x=-0.16`，和左右轮一起形成更大的支撑区域。之前只有后方一个 caster 时，支撑区域前边界接近轮轴，车体和传感器重心容易压在边界附近；Gazebo 中落地或原地转向时可能绕轮轴翘起。这里用前后两个小球支撑，是为了让重心更稳定地落在接地点围成的区域内。
 
 DiffDrive 插件关键配置：
 

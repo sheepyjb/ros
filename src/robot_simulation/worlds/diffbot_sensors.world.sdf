@@ -1,13 +1,22 @@
 <?xml version="1.0"?>
 <sdf version="1.10">
-  <world name="diffbot_drive_world">
+  <world name="diffbot_sensors_world">
     <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
     <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
     <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
 
     <gravity>0 0 -9.8</gravity>
     <magnetic_field>6.0e-6 2.3e-5 -4.2e-5</magnetic_field>
     <atmosphere type="adiabatic"/>
+
+    <scene>
+      <ambient>0.65 0.65 0.65</ambient>
+      <background>0.78 0.82 0.86</background>
+      <grid>true</grid>
+    </scene>
 
     <light name="sun" type="directional">
       <cast_shadows>true</cast_shadows>
@@ -44,6 +53,60 @@
           <material>
             <ambient>0.72 0.72 0.72 1</ambient>
             <diffuse>0.72 0.72 0.72 1</diffuse>
+            <specular>0.08 0.08 0.08 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="front_box">
+      <static>true</static>
+      <pose>2.2 0 0.25 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>0.45 0.80 0.50</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.45 0.80 0.50</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.80 0.18 0.12 1</ambient>
+            <diffuse>0.80 0.18 0.12 1</diffuse>
+            <specular>0.08 0.08 0.08 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="left_cylinder">
+      <static>true</static>
+      <pose>1.4 0.9 0.30 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <cylinder>
+              <radius>0.25</radius>
+              <length>0.60</length>
+            </cylinder>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>0.25</radius>
+              <length>0.60</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.10 0.55 0.30 1</ambient>
+            <diffuse>0.10 0.55 0.30 1</diffuse>
             <specular>0.08 0.08 0.08 1</specular>
           </material>
         </visual>
@@ -247,6 +310,108 @@
         </collision>
       </link>
 
+      <link name="laser_link">
+        <pose>0.06 0 0.25 0 0 0</pose>
+        <inertial>
+          <mass>0.05</mass>
+          <inertia>
+            <ixx>0.0001</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.0001</iyy>
+            <iyz>0</iyz>
+            <izz>0.0001</izz>
+          </inertia>
+        </inertial>
+        <visual name="visual">
+          <geometry>
+            <cylinder>
+              <radius>0.055</radius>
+              <length>0.04</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.80 0.08 0.08 1</ambient>
+            <diffuse>0.80 0.08 0.08 1</diffuse>
+            <specular>0.20 0.20 0.20 1</specular>
+          </material>
+        </visual>
+        <sensor name="front_lidar" type="gpu_lidar">
+          <topic>/scan</topic>
+          <update_rate>10</update_rate>
+          <lidar>
+            <scan>
+              <horizontal>
+                <samples>360</samples>
+                <resolution>1</resolution>
+                <min_angle>-1.5708</min_angle>
+                <max_angle>1.5708</max_angle>
+              </horizontal>
+              <vertical>
+                <samples>1</samples>
+                <resolution>1</resolution>
+                <min_angle>0</min_angle>
+                <max_angle>0</max_angle>
+              </vertical>
+            </scan>
+            <range>
+              <min>0.08</min>
+              <max>8.0</max>
+              <resolution>0.01</resolution>
+            </range>
+          </lidar>
+          <always_on>true</always_on>
+          <visualize>true</visualize>
+        </sensor>
+      </link>
+
+      <link name="camera_link">
+        <pose>0.22 0 0.20 0 0 0</pose>
+        <inertial>
+          <mass>0.05</mass>
+          <inertia>
+            <ixx>0.0001</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.0001</iyy>
+            <iyz>0</iyz>
+            <izz>0.0001</izz>
+          </inertia>
+        </inertial>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.06 0.09 0.05</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.05 0.65 0.30 1</ambient>
+            <diffuse>0.05 0.65 0.30 1</diffuse>
+            <specular>0.20 0.20 0.20 1</specular>
+          </material>
+        </visual>
+        <sensor name="front_camera" type="camera">
+          <topic>/camera/image_raw</topic>
+          <update_rate>15</update_rate>
+          <camera>
+            <camera_info_topic>/camera/camera_info</camera_info_topic>
+            <horizontal_fov>1.047</horizontal_fov>
+            <image>
+              <width>320</width>
+              <height>240</height>
+              <format>R8G8B8</format>
+            </image>
+            <clip>
+              <near>0.05</near>
+              <far>20.0</far>
+            </clip>
+            <optical_frame_id>camera_optical_frame</optical_frame_id>
+          </camera>
+          <always_on>true</always_on>
+          <visualize>true</visualize>
+        </sensor>
+      </link>
+
       <joint name="left_wheel_joint" type="revolute">
         <parent>base_link</parent>
         <child>left_wheel_link</child>
@@ -279,6 +444,16 @@
       <joint name="rear_caster_joint" type="ball">
         <parent>base_link</parent>
         <child>rear_caster_link</child>
+      </joint>
+
+      <joint name="laser_joint" type="fixed">
+        <parent>base_link</parent>
+        <child>laser_link</child>
+      </joint>
+
+      <joint name="camera_joint" type="fixed">
+        <parent>base_link</parent>
+        <child>camera_link</child>
       </joint>
 
       <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">

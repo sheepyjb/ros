@@ -173,6 +173,24 @@ ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.25}, angu
 ros2 topic echo /odom --once
 ```
 
+第 4 周第 3 小课启动雷达、相机、TF 和 RViz 同步显示：
+
+```bash
+colcon build --packages-select robot_description robot_simulation
+source install/setup.bash
+ros2 launch robot_simulation diffbot_sensors_rviz.launch.py
+```
+
+另开终端用键盘控制小车：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
+```
+
+常用按键：`i` 前进，`,` 后退，`j` 左转，`l` 右转，`k` 停止。
+
 参数默认值在：
 
 ```text

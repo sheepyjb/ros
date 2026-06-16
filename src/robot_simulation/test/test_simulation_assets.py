@@ -18,12 +18,17 @@ class RobotSimulationAssetsTest(unittest.TestCase):
         self.assertTrue((PACKAGE_ROOT / "robot_simulation" / "__init__.py").is_file())
         self.assertTrue((PACKAGE_ROOT / "launch" / "gazebo_empty_world.launch.py").is_file())
         self.assertTrue((PACKAGE_ROOT / "launch" / "diffbot_drive.launch.py").is_file())
+        self.assertTrue((PACKAGE_ROOT / "launch" / "diffbot_sensors_rviz.launch.py").is_file())
         self.assertTrue((PACKAGE_ROOT / "worlds" / "empty_diffbot.world.sdf").is_file())
         self.assertTrue((PACKAGE_ROOT / "worlds" / "diffbot_drive.world.sdf").is_file())
+        self.assertTrue((PACKAGE_ROOT / "worlds" / "diffbot_sensors.world.sdf").is_file())
         self.assertTrue((PACKAGE_ROOT / "config" / "clock_bridge.yaml").is_file())
         self.assertTrue((PACKAGE_ROOT / "config" / "diff_drive_bridge.yaml").is_file())
+        self.assertTrue((PACKAGE_ROOT / "config" / "sensor_bridge.yaml").is_file())
+        self.assertTrue((PACKAGE_ROOT / "rviz" / "sensors.rviz").is_file())
         self.assertTrue((PACKAGE_ROOT / "WEEK_04_01_GAZEBO_ENVIRONMENT.md").is_file())
         self.assertTrue((PACKAGE_ROOT / "WEEK_04_02_DIFFBOT_DRIVE_IN_GAZEBO.md").is_file())
+        self.assertTrue((PACKAGE_ROOT / "WEEK_04_03_SENSORS_TF_RVIZ.md").is_file())
 
     def test_setup_installs_simulation_assets(self):
         setup_path = PACKAGE_ROOT / "setup.py"
@@ -40,6 +45,7 @@ class RobotSimulationAssetsTest(unittest.TestCase):
         self.assertIn("launch/*.launch.py", string_literals)
         self.assertIn("worlds/*.sdf", string_literals)
         self.assertIn("config/*.yaml", string_literals)
+        self.assertIn("rviz/*.rviz", string_literals)
 
     def test_package_declares_gazebo_dependencies(self):
         package_path = PACKAGE_ROOT / "package.xml"
@@ -60,9 +66,16 @@ class RobotSimulationAssetsTest(unittest.TestCase):
         self.assertIn("launch", dependencies)
         self.assertIn("launch_ros", dependencies)
         self.assertIn("nav_msgs", dependencies)
+        self.assertIn("robot_description", dependencies)
+        self.assertIn("robot_state_publisher", dependencies)
         self.assertIn("ros_gz_sim", dependencies)
         self.assertIn("ros_gz_bridge", dependencies)
         self.assertIn("rosgraph_msgs", dependencies)
+        self.assertIn("rviz2", dependencies)
+        self.assertIn("sensor_msgs", dependencies)
+        self.assertIn("teleop_twist_keyboard", dependencies)
+        self.assertIn("tf2_ros", dependencies)
+        self.assertIn("xacro", dependencies)
 
     def test_empty_world_has_required_gazebo_systems(self):
         world_path = PACKAGE_ROOT / "worlds" / "empty_diffbot.world.sdf"
@@ -136,6 +149,8 @@ class RobotSimulationAssetsTest(unittest.TestCase):
         self.assertIn("base_link", links)
         self.assertIn("left_wheel_link", links)
         self.assertIn("right_wheel_link", links)
+        self.assertIn("front_caster_link", links)
+        self.assertIn("rear_caster_link", links)
 
         self.assertEqual("0 0.18 0.07 0 0 0", model.find("link[@name='left_wheel_link']").find("pose").text)
         self.assertEqual("0 -0.18 0.07 0 0 0", model.find("link[@name='right_wheel_link']").find("pose").text)
@@ -152,6 +167,14 @@ class RobotSimulationAssetsTest(unittest.TestCase):
         self.assertEqual("right_wheel_link", joints["right_wheel_joint"].find("child").text)
         self.assertEqual("0 1 0", joints["left_wheel_joint"].find("axis").find("xyz").text)
         self.assertEqual("0 1 0", joints["right_wheel_joint"].find("axis").find("xyz").text)
+        self.assertEqual("0.16 0 0.035 0 0 0", model.find("link[@name='front_caster_link']").find("pose").text)
+        self.assertEqual("-0.16 0 0.035 0 0 0", model.find("link[@name='rear_caster_link']").find("pose").text)
+        self.assertEqual("ball", joints["front_caster_joint"].attrib["type"])
+        self.assertEqual("ball", joints["rear_caster_joint"].attrib["type"])
+        self.assertEqual("base_link", joints["front_caster_joint"].find("parent").text)
+        self.assertEqual("front_caster_link", joints["front_caster_joint"].find("child").text)
+        self.assertEqual("base_link", joints["rear_caster_joint"].find("parent").text)
+        self.assertEqual("rear_caster_link", joints["rear_caster_joint"].find("child").text)
 
         plugin = model.find("plugin[@name='gz::sim::systems::DiffDrive']")
         self.assertIsNotNone(plugin)
@@ -203,6 +226,133 @@ class RobotSimulationAssetsTest(unittest.TestCase):
         self.assertIn("ros_gz_bridge", string_literals)
         self.assertIn("parameter_bridge", string_literals)
         self.assertIn("diff_drive_bridge.yaml", string_literals)
+
+    def test_sensor_world_adds_camera_lidar_and_scene_targets(self):
+        world_path = PACKAGE_ROOT / "worlds" / "diffbot_sensors.world.sdf"
+        if not world_path.is_file():
+            self.fail("robot_simulation/worlds/diffbot_sensors.world.sdf should exist")
+
+        world = ET.parse(world_path).getroot().find("world")
+        self.assertIsNotNone(world)
+        self.assertEqual("diffbot_sensors_world", world.attrib["name"])
+
+        model = world.find("model[@name='diffbot']")
+        self.assertIsNotNone(model)
+
+        links = {link.attrib["name"] for link in model.findall("link")}
+        self.assertIn("base_link", links)
+        self.assertIn("laser_link", links)
+        self.assertIn("camera_link", links)
+        self.assertIn("front_caster_link", links)
+        self.assertIn("rear_caster_link", links)
+
+        joints = {joint.attrib["name"]: joint for joint in model.findall("joint")}
+        self.assertEqual("0.16 0 0.035 0 0 0", model.find("link[@name='front_caster_link']").find("pose").text)
+        self.assertEqual("-0.16 0 0.035 0 0 0", model.find("link[@name='rear_caster_link']").find("pose").text)
+        self.assertEqual("ball", joints["front_caster_joint"].attrib["type"])
+        self.assertEqual("ball", joints["rear_caster_joint"].attrib["type"])
+        self.assertEqual("base_link", joints["front_caster_joint"].find("parent").text)
+        self.assertEqual("front_caster_link", joints["front_caster_joint"].find("child").text)
+        self.assertEqual("base_link", joints["rear_caster_joint"].find("parent").text)
+        self.assertEqual("rear_caster_link", joints["rear_caster_joint"].find("child").text)
+
+        laser_link = model.find("link[@name='laser_link']")
+        laser_sensor = laser_link.find("sensor[@name='front_lidar']")
+        self.assertIsNotNone(laser_sensor)
+        self.assertEqual("gpu_lidar", laser_sensor.attrib["type"])
+        self.assertEqual("/scan", laser_sensor.find("topic").text)
+        self.assertEqual("10", laser_sensor.find("update_rate").text)
+        self.assertEqual("360", laser_sensor.find("lidar/scan/horizontal/samples").text)
+        self.assertEqual("-1.5708", laser_sensor.find("lidar/scan/horizontal/min_angle").text)
+        self.assertEqual("1.5708", laser_sensor.find("lidar/scan/horizontal/max_angle").text)
+
+        camera_link = model.find("link[@name='camera_link']")
+        camera_sensor = camera_link.find("sensor[@name='front_camera']")
+        self.assertIsNotNone(camera_sensor)
+        self.assertEqual("camera", camera_sensor.attrib["type"])
+        self.assertEqual("/camera/image_raw", camera_sensor.find("topic").text)
+        self.assertEqual("15", camera_sensor.find("update_rate").text)
+        self.assertEqual("/camera/camera_info", camera_sensor.find("camera/camera_info_topic").text)
+        self.assertEqual("camera_optical_frame", camera_sensor.find("camera/optical_frame_id").text)
+
+        obstacle_names = {model.attrib["name"] for model in world.findall("model")}
+        self.assertIn("front_box", obstacle_names)
+        self.assertIn("left_cylinder", obstacle_names)
+
+    def test_sensor_bridge_connects_motion_sensor_and_tf_topics(self):
+        config_path = PACKAGE_ROOT / "config" / "sensor_bridge.yaml"
+        if not config_path.is_file():
+            self.fail("robot_simulation/config/sensor_bridge.yaml should exist")
+
+        config_text = config_path.read_text(encoding="utf-8")
+
+        self.assertIn('ros_topic_name: "/clock"', config_text)
+        self.assertIn('ros_topic_name: "/cmd_vel"', config_text)
+        self.assertIn('ros_topic_name: "/odom"', config_text)
+        self.assertIn('ros_topic_name: "/scan"', config_text)
+        self.assertIn('ros_topic_name: "/camera/image_raw"', config_text)
+        self.assertIn('ros_topic_name: "/camera/camera_info"', config_text)
+        self.assertIn('ros_type_name: "sensor_msgs/msg/LaserScan"', config_text)
+        self.assertIn('ros_type_name: "sensor_msgs/msg/Image"', config_text)
+        self.assertIn('ros_type_name: "sensor_msgs/msg/CameraInfo"', config_text)
+        self.assertIn('gz_type_name: "gz.msgs.LaserScan"', config_text)
+        self.assertIn('gz_type_name: "gz.msgs.Image"', config_text)
+        self.assertIn('gz_type_name: "gz.msgs.CameraInfo"', config_text)
+        self.assertIn('frame_id: "laser_link"', config_text)
+        self.assertIn('frame_id: "camera_optical_frame"', config_text)
+        self.assertIn("qos_profile: SENSOR_DATA", config_text)
+
+    def test_sensor_rviz_config_shows_robot_tf_scan_and_camera(self):
+        rviz_path = PACKAGE_ROOT / "rviz" / "sensors.rviz"
+        if not rviz_path.is_file():
+            self.fail("robot_simulation/rviz/sensors.rviz should exist")
+
+        rviz_text = rviz_path.read_text(encoding="utf-8")
+
+        self.assertIn("Fixed Frame: odom", rviz_text)
+        self.assertIn("Class: rviz_default_plugins/RobotModel", rviz_text)
+        self.assertIn("Class: rviz_default_plugins/TF", rviz_text)
+        self.assertIn("Class: rviz_default_plugins/LaserScan", rviz_text)
+        self.assertIn("Topic: /scan", rviz_text)
+        self.assertIn("Class: rviz_default_plugins/Image", rviz_text)
+        self.assertIn("Topic: /camera/image_raw", rviz_text)
+        self.assertIn("Durability Policy: Transient Local", rviz_text)
+
+    def test_sensor_launch_starts_gazebo_bridge_tf_model_and_rviz(self):
+        launch_path = PACKAGE_ROOT / "launch" / "diffbot_sensors_rviz.launch.py"
+        if not launch_path.is_file():
+            self.fail("robot_simulation/launch/diffbot_sensors_rviz.launch.py should exist")
+
+        launch_source = launch_path.read_text(encoding="utf-8")
+        launch_tree = ast.parse(launch_source)
+        string_literals = {
+            node.value
+            for node in ast.walk(launch_tree)
+            if isinstance(node, ast.Constant) and isinstance(node.value, str)
+        }
+
+        self.assertIn("ros_gz_sim", string_literals)
+        self.assertIn("gz_sim.launch.py", string_literals)
+        self.assertIn("diffbot_sensors.world.sdf", string_literals)
+        self.assertIn("sensor_bridge.yaml", string_literals)
+        self.assertIn("robot_description", string_literals)
+        self.assertIn("diffbot.urdf.xacro", string_literals)
+        self.assertIn("robot_state_publisher", string_literals)
+        self.assertIn("odom_to_tf", string_literals)
+        self.assertIn("rviz2", string_literals)
+        self.assertIn("sensors.rviz", string_literals)
+
+    def test_week_04_03_documents_direct_interactive_keyboard_teleop(self):
+        lesson_path = PACKAGE_ROOT / "WEEK_04_03_SENSORS_TF_RVIZ.md"
+        if not lesson_path.is_file():
+            self.fail("robot_simulation/WEEK_04_03_SENSORS_TF_RVIZ.md should exist")
+
+        lesson_text = lesson_path.read_text(encoding="utf-8")
+
+        self.assertIn("ros2 run teleop_twist_keyboard teleop_twist_keyboard", lesson_text)
+        self.assertIn("真正的交互终端", lesson_text)
+        self.assertIn("/cmd_vel", lesson_text)
+        self.assertIn("i      前进", lesson_text)
 
 
 if __name__ == "__main__":
