@@ -1,9 +1,22 @@
 image_detector_node:
   ros__parameters:
+    # Gazebo 仿真使用 /clock，本节点需要跟随仿真时间，方便和相机帧、rosbag 对齐。
     use_sim_time: true
+
+    # 输入图像话题：第 4 周 Gazebo 相机通过 ros_gz_bridge 发布到这里。
     image_topic: /camera/image_raw
+
+    # 结构化检测结果话题：后续控制节点会读这个消息。
     detection_topic: /target_detection
+
+    # 调试图像话题：在原图上画检测框，用 RViz2 Image display 观察。
     debug_image_topic: /target_detection/debug_image
+
+    # 默认检测红色方块；也可以 ros2 launch ... target_color:=green 临时检测绿色圆柱。
     target_color: red
+
+    # 小于这个像素面积的颜色区域会被当成噪声忽略。
     min_area_pixels: 200.0
+
+    # true 表示发布画框图像；如果只想要检测消息，可以改成 false 降低一点开销。
     publish_debug_image: true

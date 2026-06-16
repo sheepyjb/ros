@@ -1,24 +1,40 @@
 <?xml version="1.0"?>
 <package format="3">
+  <!-- package.xml 是 ROS 2 包清单：声明包名、维护者、构建类型和运行依赖。 -->
   <name>robot_perception</name>
   <version>0.1.0</version>
   <description>ROS 2 image perception exercises for the learning robot.</description>
   <maintainer email="student@example.com">ROS 2 Learner</maintainer>
   <license>MIT</license>
 
+  <!-- cv_bridge 把 sensor_msgs/Image 转成 OpenCV 图像，也能把 OpenCV 图像转回 Image。 -->
   <exec_depend>cv_bridge</exec_depend>
+
+  <!-- image_transport 是 ROS 图像传输常用包；本课先直接订阅 Image，后续可扩展压缩图像。 -->
   <exec_depend>image_transport</exec_depend>
+
+  <!-- launch / launch_ros 支持 ros2 launch 启动 Python 节点。 -->
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
+
+  <!-- python3-opencv 提供 cv2，本课颜色阈值、轮廓查找和画框都依赖它。 -->
   <exec_depend>python3-opencv</exec_depend>
+
+  <!-- rclpy 是 ROS 2 Python 节点运行库。 -->
   <exec_depend>rclpy</exec_depend>
+
+  <!-- robot_interfaces 提供 TargetDetection.msg。 -->
   <exec_depend>robot_interfaces</exec_depend>
+
+  <!-- sensor_msgs 提供 Image 消息。 -->
   <exec_depend>sensor_msgs</exec_depend>
 
+  <!-- 这两个是 ROS 2 常见测试/lint 依赖，本项目主要用 unittest 做教学测试。 -->
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
   <export>
+    <!-- 说明这是 ament_python 包，不是 ament_cmake 接口包。 -->
     <build_type>ament_python</build_type>
   </export>
 </package>
