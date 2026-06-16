@@ -16,6 +16,7 @@
     ├── robot_bringup/
     ├── robot_description/
     ├── robot_interfaces/
+    ├── robot_perception/
     ├── robot_simulation/
     ├── tf2_frame_demo/
     └── turtlesim_p_controller/
@@ -191,10 +192,35 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 常用按键：`i` 前进，`,` 后退，`j` 左转，`l` 右转，`k` 停止。
 
+第 5 周第 1 小课启动 ROS 2 图像检测节点：
+
+```bash
+colcon build --packages-select robot_interfaces robot_simulation robot_perception
+source install/setup.bash
+ros2 launch robot_simulation diffbot_sensors_rviz.launch.py
+```
+
+另开终端启动颜色目标检测：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch robot_perception color_detector.launch.py
+```
+
+查看检测结果：
+
+```bash
+ros2 topic echo /target_detection
+```
+
+在 RViz2 中添加 `/target_detection/debug_image` 可以观察画框后的调试图像。
+
 参数默认值在：
 
 ```text
 src/turtlesim_p_controller/config/goal_controller.yaml
+src/robot_perception/config/color_detector.yaml
 ```
 
 ## Git 使用

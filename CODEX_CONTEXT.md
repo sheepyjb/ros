@@ -15,7 +15,8 @@ Current goal:
 - 第 4 周第 2 小课：差速小车 Gazebo 运动、`/cmd_vel` 和 `/odom` bridge 已完成代码、讲义和实机验证。
 - 第 4 周第 3 小课：键盘控制、雷达、相机、TF/RViz 同步显示已完成代码、讲义和验证。
 - 第 4 周第 2/3 小课 Gazebo 小车已从单后 caster 改为前后两个 caster，修复原地转向时绕轮轴翘起的问题。
-- 下一步进入第 5 周：YOLO 接入 ROS 2 图像链路。
+- 第 5 周第 1 小课：ROS 2 图像订阅、`cv_bridge`、OpenCV 颜色目标检测和 `/target_detection` 发布链路已完成代码、讲义和验证。
+- 下一步进入第 5 周第 1 小课实机验证，随后进入第 5 周第 2 小课：接入真实 YOLO 后端。
 
 Completed work:
 
@@ -105,6 +106,14 @@ Completed work:
 - 扩展 `src/robot_simulation/test/test_simulation_assets.py` 并新增 `src/robot_simulation/test/test_odom_to_tf.py`，覆盖第三课资产和 odom->TF 转换。
 - 已删除不可用的 `diffbot_keyboard_teleop.launch.py` 方案；键盘控制统一用第二终端直接运行 `ros2 run teleop_twist_keyboard teleop_twist_keyboard`。
 - 将 `diffbot_drive.world.sdf` 和 `diffbot_sensors.world.sdf` 中的小车支撑从单后 caster 改为 `front_caster_link` + `rear_caster_link`，避免 Gazebo 原地转向时绕轮轴翘起。
+- 创建 ROS 2 Python 包 `src/robot_perception`，用于第 5 周图像感知链路。
+- 新增 `src/robot_perception/robot_perception/color_blob_detector.py`，用 OpenCV HSV 阈值检测红色/绿色目标并输出归一化检测框。
+- 新增 `src/robot_perception/robot_perception/image_detector_node.py`，订阅 `/camera/image_raw`，发布 `robot_interfaces/msg/TargetDetection` 到 `/target_detection`，并发布画框后的 `/target_detection/debug_image`。
+- 新增 `src/robot_perception/config/color_detector.yaml` 和 `src/robot_perception/launch/color_detector.launch.py`，配置图像话题、检测话题、debug 图像话题、目标颜色、面积阈值和仿真时间。
+- 新增第 5 周第 1 小课讲义 `src/robot_perception/WEEK_05_01_IMAGE_DETECTION_NODE.md`。
+- 新增 `src/robot_perception/test/test_color_blob_detector.py`、`test_perception_assets.py` 和 `test_node_shutdown.py`，覆盖检测数学、包资产和 rclpy Ctrl-C 清理路径。
+- 更新 `README.md` 和 `ros2_learning_notes.md`，加入第 5 周第 1 小课运行入口和正文学习笔记。
+- 记录 `image_detector_node` 清理阶段 `KeyboardInterrupt` 的 rclpy 退出模板坑点到 `CODEX_PITFALLS.md`。
 
 Important decisions:
 
@@ -142,6 +151,10 @@ Important decisions:
 - `/odom` 不等于 `/tf`；新增 `odom_to_tf` 节点专门发布 `odom -> base_link`，传感器固定 frame 仍由 `robot_state_publisher` 发布。
 - `teleop_twist_keyboard` 需要真实交互终端 stdin，不能包装进普通 `ros2 launch`；课程中固定用第二终端直接 `ros2 run teleop_twist_keyboard teleop_twist_keyboard`。
 - Gazebo 物理稳定性要看 collision、inertial 和接地点支撑区域；RViz 姿态正常不代表 Gazebo 小车不会翻。第 4 周小车使用前后两个 caster 扩大支撑区域。
+- 第 5 周第 1 小课先用 OpenCV 颜色检测替代 YOLO，目的是先验证 ROS 2 图像订阅、`cv_bridge`、QoS、检测消息和 debug 图像发布链路；真实 YOLO 依赖和模型权重放到第 5 周第 2 小课。
+- `robot_perception` 是感知节点包；`robot_interfaces` 继续只放消息/服务接口，`robot_simulation` 继续只提供 Gazebo 相机和 bridge。
+- `TargetDetection.msg` 暂不升级成数组消息，第 5 周第 1/2 小课先发布单个最高优先级目标，继续使用归一化 `center_x/center_y/width/height`。
+- 新增 rclpy 节点时复用 clean-exit 模板：`destroy_node()` 也要捕获 `KeyboardInterrupt`，并只在 `rclpy.ok()` 为真时调用 `rclpy.shutdown()`。
 
 Verification:
 
@@ -236,10 +249,23 @@ Verification:
 - caster 修复后已重新运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_simulation diffbot_sensors_rviz.launch.py --show-args`，主 launch 可加载。
 - caster 修复后已运行 headless Gazebo 原地转向验证：转向后 `diffbot` orientation 的 `x=-1.092e-07`、`y=1.690e-07`，只剩 yaw 分量明显变化，没有再绕轮轴翘起。
 - 已运行 `git diff --check`，无空白错误。
+- 第 5 周第 1 小课 TDD RED：新增 `src/robot_perception/test/test_color_blob_detector.py` 和 `test_perception_assets.py` 后运行 `PYTHONPATH=src/robot_perception python3 -m unittest discover -s src/robot_perception/test`，失败 7 项，原因是 `robot_perception` 包和目标资产不存在。
+- 第 5 周第 1 小课 GREEN：补齐 `robot_perception` 后运行 `PYTHONPATH=src/robot_perception python3 -m unittest discover -s src/robot_perception/test`，10 个测试通过。
+- 发现 `image_detector_node` 短时 launch 退出时在 `destroy_node()` 里出现 `KeyboardInterrupt` traceback；新增 `test_node_shutdown.py` 复现后修复。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && PYTHONPATH=src/robot_perception:$PYTHONPATH python3 -m unittest discover -s src/robot_perception/test`，12 个测试通过。
+- 已运行 `python3 -m compileall src/robot_perception`，语法检查通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_interfaces robot_simulation robot_perception`，3 个包构建通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_perception`，修复退出路径后新包重建通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ros2 pkg executables robot_perception`，确认入口为 `image_detector_node`。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_perception color_detector.launch.py --show-args`，确认 `use_sim_time` 和 `target_color` 参数可加载。
+- 已运行安装态 `DetectionResult -> TargetDetection` 转换检查，输出 `red_target 1.0 0.4 0.5 0.3 0.6 True`。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs timeout -s INT 5s ros2 launch robot_perception color_detector.launch.py`，节点启动并 clean exit；当前沙箱仍有 DDS socket/getifaddrs 权限噪声。
+- 已运行 `git diff --check`，无空白错误。
 
 Remaining tasks:
 
-- 第 5 周开始接入 YOLO 图像处理链路。
+- 用户在正常桌面终端运行第 5 周第 1 小课两个终端流程，确认 `/target_detection` 和 `/target_detection/debug_image` 能看到 Gazebo 红色目标。
+- 第 5 周第 2 小课：安装/确认 `torch`、`ultralytics` 和模型权重，给 `robot_perception` 增加真实 YOLO detector 后端。
 
 Key files:
 
@@ -303,8 +329,33 @@ Key files:
 - `src/robot_simulation/setup.py`
 - `src/robot_simulation/test/test_simulation_assets.py`
 - `src/robot_simulation/test/test_odom_to_tf.py`
+- `src/robot_perception/README.md`
+- `src/robot_perception/WEEK_05_01_IMAGE_DETECTION_NODE.md`
+- `src/robot_perception/config/color_detector.yaml`
+- `src/robot_perception/launch/color_detector.launch.py`
+- `src/robot_perception/robot_perception/color_blob_detector.py`
+- `src/robot_perception/robot_perception/image_detector_node.py`
+- `src/robot_perception/package.xml`
+- `src/robot_perception/setup.py`
+- `src/robot_perception/test/test_color_blob_detector.py`
+- `src/robot_perception/test/test_node_shutdown.py`
+- `src/robot_perception/test/test_perception_assets.py`
 
 ## Session Notes
+
+### 2026-06-16
+
+- Progress/result checkpoint:
+  - 用户要求开始第 5 周第 1 小课。
+  - 已完成 `robot_perception` 包：OpenCV 颜色目标检测、ROS 2 图像订阅节点、`/target_detection`、`/target_detection/debug_image`、参数 YAML、launch、讲义、README 和总学习笔记。
+  - 本课明确先不用 YOLO，先用红色/绿色目标检测跑通 `sensor_msgs/Image -> cv_bridge -> OpenCV -> TargetDetection` 链路。
+  - 修复 `image_detector_node` 在 SIGINT 清理阶段的 `KeyboardInterrupt` traceback，并记录到 `CODEX_PITFALLS.md`。
+- Verification:
+  - TDD RED/GREEN、12 个 perception 单元测试、`compileall`、`colcon build`、`ros2 pkg executables`、launch `--show-args`、安装态消息转换和短时 clean-exit 检查均已通过。
+  - 当前沙箱无法完成 Gazebo + RViz 图像实机验证；短时 launch 中的 DDS socket/getifaddrs 权限噪声属于沙箱限制。
+- Next:
+  - 用户在桌面终端运行第 5 周第 1 小课流程，确认 `/target_detection` 和 `/target_detection/debug_image`。
+  - 验证通过后进入第 5 周第 2 小课，接入真实 YOLO 后端。
 
 ### 2026-06-16
 

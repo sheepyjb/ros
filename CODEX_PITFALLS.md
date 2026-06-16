@@ -1,5 +1,23 @@
 # CODEX_PITFALLS
 
+## 2026-06-16
+
+Symptom:
+
+- `timeout -s INT ros2 launch robot_perception color_detector.launch.py` 停止节点时，`image_detector_node` 在 `node.destroy_node()` 清理阶段抛出 `KeyboardInterrupt` traceback。
+
+Root cause:
+
+- launch 收到 SIGINT 后，`rclpy.spin()` 外层捕获了 Ctrl-C，但清理 ROS 2 node 时仍可能再次收到 SIGINT；如果 `destroy_node()` 不单独捕获，退出日志会显示 traceback。
+
+Fix:
+
+- 在节点 `main()` 的 `finally` 中用 `try/except KeyboardInterrupt` 包住 `node.destroy_node()`，并继续只在 `rclpy.ok()` 为真时调用 `rclpy.shutdown()`。
+
+Prevention note:
+
+- 后续新增 rclpy 节点时复用第 3 周 `tf2_frame_demo` 的 clean-exit 模板，并为 `main()` 加一个 fake rclpy shutdown 单元测试。
+
 ## 2026-06-14
 
 Symptom:

@@ -1,0 +1,9 @@
+image_detector_node:
+  ros__parameters:
+    use_sim_time: true
+    image_topic: /camera/image_raw
+    detection_topic: /target_detection
+    debug_image_topic: /target_detection/debug_image
+    target_color: red
+    min_area_pixels: 200.0
+    publish_debug_image: true

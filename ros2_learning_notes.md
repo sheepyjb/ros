@@ -291,6 +291,45 @@ i 前进，, 后退，j 左转，l 右转，k 停止。
 - 发布检测框结果。
 - 用 rosbag2 录制和回放测试数据。
 
+当前进度：
+
+- 第 5 周第 1 小课开始，新增 `robot_perception` 包。
+- 本课先不用真实 YOLO，先用 OpenCV 颜色检测跑通 `sensor_msgs/Image -> cv_bridge -> OpenCV -> TargetDetection` 链路。
+- 新增 `robot_perception/color_blob_detector.py`，用 HSV 阈值检测红色或绿色目标，并输出归一化检测框。
+- 新增 `robot_perception/image_detector_node.py`，订阅 `/camera/image_raw`，发布 `/target_detection` 和 `/target_detection/debug_image`。
+- 新增 `config/color_detector.yaml` 和 `launch/color_detector.launch.py`，保存默认话题、颜色和最小面积阈值。
+
+第 5 周第 1 小课运行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd /home/sheepyjb/ros
+colcon build --packages-select robot_interfaces robot_simulation robot_perception
+source install/setup.bash
+ros2 launch robot_simulation diffbot_sensors_rviz.launch.py
+```
+
+另开终端启动检测节点：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd /home/sheepyjb/ros
+source install/setup.bash
+ros2 launch robot_perception color_detector.launch.py
+```
+
+查看检测结果：
+
+```bash
+ros2 topic echo /target_detection
+```
+
+在 RViz2 中添加 Image display，选择：
+
+```text
+/target_detection/debug_image
+```
+
 ### 第 6 周：控制理论落地
 
 目标：把控制理论落实到机器人速度控制。
@@ -798,6 +837,83 @@ RViz2 的 RobotModel 和 TF display 可以观察同一套模型
 当前 Jazzy 的 xacro 命令不支持 xacro --version
 验证 Xacro 是否安装，用 ros2 pkg prefix xacro
 如果 RViz 显示 No tf data，先查 ros2 node list、/tf_static 和 robot_state_publisher 是否存在
+```
+
+## 第 5 周第 1 小课学习笔记：图像订阅与颜色目标检测
+
+本课新增 `robot_perception` 包，先不用 YOLO，先用 OpenCV 颜色检测验证 ROS 2 图像链路。
+
+核心数据流：
+
+```text
+Gazebo 相机
+-> /camera/image_raw
+-> image_detector_node
+-> /target_detection
+-> /target_detection/debug_image
+```
+
+关键概念：
+
+```text
+sensor_msgs/Image：ROS 2 里的图像消息
+cv_bridge：ROS Image 和 OpenCV 图像之间的转换工具
+OpenCV BGR 图像：Python 中实际处理的图像矩阵
+QoS sensor data：适合相机、雷达这类高频传感器数据
+TargetDetection：第 2 周定义的检测结果消息
+```
+
+`TargetDetection.msg` 中的框坐标继续使用归一化坐标：
+
+```text
+center_x = 0.5 表示画面水平中心
+center_y = 0.5 表示画面垂直中心
+width 和 height 也是相对图像尺寸的比例
+```
+
+这样做的好处是后续控制节点不需要关心图像分辨率。
+
+推荐运行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd /home/sheepyjb/ros
+colcon build --packages-select robot_interfaces robot_simulation robot_perception
+source install/setup.bash
+ros2 launch robot_simulation diffbot_sensors_rviz.launch.py
+```
+
+另开终端：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd /home/sheepyjb/ros
+source install/setup.bash
+ros2 launch robot_perception color_detector.launch.py
+ros2 topic echo /target_detection
+```
+
+检测绿色目标：
+
+```bash
+ros2 launch robot_perception color_detector.launch.py target_color:=green
+```
+
+本课实操要观察：
+
+```text
+/camera/image_raw 是否存在
+/target_detection 是否持续发布
+画面里有目标时 is_tracking 是否为 true
+没有足够大目标时 is_tracking 是否为 false
+/target_detection/debug_image 是否能在 RViz2 中显示黄色检测框
+```
+
+本课和下一课的关系：
+
+```text
+本课重点是 ROS 2 图像链路
+下一课再把 OpenCV 颜色检测后端换成真实 YOLO
 ```
 
 ## 每周复盘模板
