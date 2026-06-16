@@ -298,6 +298,9 @@ i 前进，, 后退，j 左转，l 右转，k 停止。
 - 新增 `robot_perception/color_blob_detector.py`，用 HSV 阈值检测红色或绿色目标，并输出归一化检测框。
 - 新增 `robot_perception/image_detector_node.py`，订阅 `/camera/image_raw`，发布 `/target_detection` 和 `/target_detection/debug_image`。
 - 新增 `config/color_detector.yaml` 和 `launch/color_detector.launch.py`，保存默认话题、颜色和最小面积阈值。
+- 第 5 周第 2 小课接入真实 YOLO 后端，`image_detector_node` 通过 `detector_backend:=color|yolo` 在颜色检测和 YOLO 检测之间切换。
+- 新增 `robot_perception/yolo_detector.py`，把 Ultralytics YOLO 输出转换成现有 `DetectionResult` 和 `TargetDetection.msg` 合约。
+- 新增 `config/yolo_detector.yaml` 和 `launch/yolo_detector.launch.py`，保存 YOLO 模型、置信度阈值和目标类别过滤参数。
 
 第 5 周第 1 小课运行：
 
@@ -328,6 +331,35 @@ ros2 topic echo /target_detection
 
 ```text
 /target_detection/debug_image
+```
+
+第 5 周第 2 小课推荐在 WSL 内准备 YOLO 环境：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd /home/sheepyjb/ros
+python3 -m venv .venv_yolo --system-site-packages
+source .venv_yolo/bin/activate
+python3 -m pip install --upgrade pip
+python3 -m pip install ultralytics
+```
+
+启动真实 YOLO 后端：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd /home/sheepyjb/ros
+source .venv_yolo/bin/activate
+colcon build --packages-select robot_interfaces robot_simulation robot_perception
+source install/setup.bash
+ros2 launch robot_perception yolo_detector.launch.py
+```
+
+可调参数：
+
+```bash
+ros2 launch robot_perception yolo_detector.launch.py yolo_confidence_threshold:=0.5
+ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:=person
 ```
 
 ### 第 6 周：控制理论落地
@@ -914,6 +946,73 @@ ros2 launch robot_perception color_detector.launch.py target_color:=green
 ```text
 本课重点是 ROS 2 图像链路
 下一课再把 OpenCV 颜色检测后端换成真实 YOLO
+```
+
+## 第 5 周第 2 小课学习笔记：接入真实 YOLO 后端
+
+本课在第 5 周第 1 小课的图像链路基础上，把检测算法后端从 OpenCV 颜色阈值扩展为真实 Ultralytics YOLO。
+
+核心设计：
+
+```text
+同一个 image_detector_node
+detector_backend: color -> color_blob_detector.py
+detector_backend: yolo  -> yolo_detector.py
+输出仍然是 /target_detection 和 /target_detection/debug_image
+```
+
+这样做的好处：
+
+```text
+ROS 2 图像订阅、QoS、cv_bridge、自定义消息和 debug 图像发布逻辑不重复
+颜色检测可以作为没有模型权重时的 fallback
+YOLO 相关依赖只在选择 yolo 后端时加载
+```
+
+WSL 内推荐使用带系统包可见性的 venv：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd /home/sheepyjb/ros
+python3 -m venv .venv_yolo --system-site-packages
+source .venv_yolo/bin/activate
+python3 -m pip install --upgrade pip
+python3 -m pip install ultralytics
+```
+
+这个 venv 需要同时能导入：
+
+```text
+ultralytics
+rclpy
+cv_bridge
+```
+
+运行 YOLO 后端：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd /home/sheepyjb/ros
+source .venv_yolo/bin/activate
+source install/setup.bash
+ros2 launch robot_perception yolo_detector.launch.py
+```
+
+关键参数：
+
+```text
+yolo_model_path：模型名或本地 .pt 权重路径
+yolo_confidence_threshold：低于该置信度的框会被忽略
+yolo_target_class：空字符串接受任意类别，设置 person 等类别名可做过滤
+```
+
+本课要重点理解：
+
+```text
+YOLO 输出的是像素坐标框
+节点发布的 TargetDetection 继续使用归一化坐标
+当前课程仍只发布最高置信度的单个目标
+多目标数组和跟踪逻辑后续再扩展
 ```
 
 ## 每周复盘模板

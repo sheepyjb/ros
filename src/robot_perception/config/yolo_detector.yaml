@@ -1,0 +1,32 @@
+image_detector_node:
+  ros__parameters:
+    # Gazebo 仿真使用 /clock，本节点需要跟随仿真时间，方便和相机帧、rosbag 对齐。
+    use_sim_time: true
+
+    # 输入图像话题：第 4 周 Gazebo 相机通过 ros_gz_bridge 发布到这里。
+    image_topic: /camera/image_raw
+
+    # 结构化检测结果话题：继续复用第 5 周第 1 小课的输出合约。
+    detection_topic: /target_detection
+
+    # 调试图像话题：YOLO 检测框也画到这里，仍然可用 RViz2 Image display 观察。
+    debug_image_topic: /target_detection/debug_image
+
+    # 本配置把同一个 image_detector_node 切换到真实 YOLO 后端。
+    detector_backend: yolo
+
+    # 保留 color 参数，方便同一个节点在 color/yolo 两种后端间切换。
+    target_color: red
+    min_area_pixels: 200.0
+
+    # true 表示发布画框图像；如果只想要检测消息，可以改成 false 降低一点开销。
+    publish_debug_image: true
+
+    # Ultralytics 支持模型名或本地权重路径；首次使用模型名时可能自动下载权重。
+    yolo_model_path: yolov8n.pt
+
+    # YOLO 置信度低于这个值的框会被忽略。
+    yolo_confidence_threshold: 0.25
+
+    # 空字符串表示接受任意类别；例如可改成 "person" 只跟踪人。
+    yolo_target_class: ""

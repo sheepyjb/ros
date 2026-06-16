@@ -16,7 +16,8 @@ Current goal:
 - 第 4 周第 3 小课：键盘控制、雷达、相机、TF/RViz 同步显示已完成代码、讲义和验证。
 - 第 4 周第 2/3 小课 Gazebo 小车已从单后 caster 改为前后两个 caster，修复原地转向时绕轮轴翘起的问题。
 - 第 5 周第 1 小课：ROS 2 图像订阅、`cv_bridge`、OpenCV 颜色目标检测和 `/target_detection` 发布链路已完成代码、讲义和验证。
-- 下一步进入第 5 周第 1 小课实机验证，随后进入第 5 周第 2 小课：接入真实 YOLO 后端。
+- 第 5 周第 2 小课：同一个 `image_detector_node` 已支持 `detector_backend:=color|yolo`，真实 Ultralytics YOLO 后端接入代码、launch/config、讲义和验证已完成。
+- 下一步在用户正常 WSL 终端创建 `.venv_yolo` 并安装 `ultralytics`，再实际启动 Gazebo + YOLO 后端观察 `/target_detection`。
 
 Completed work:
 
@@ -114,6 +115,13 @@ Completed work:
 - 新增 `src/robot_perception/test/test_color_blob_detector.py`、`test_perception_assets.py` 和 `test_node_shutdown.py`，覆盖检测数学、包资产和 rclpy Ctrl-C 清理路径。
 - 更新 `README.md` 和 `ros2_learning_notes.md`，加入第 5 周第 1 小课运行入口和正文学习笔记。
 - 记录 `image_detector_node` 清理阶段 `KeyboardInterrupt` 的 rclpy 退出模板坑点到 `CODEX_PITFALLS.md`。
+- 第 5 周第 2 小课设计规格已保存到 `docs/superpowers/specs/2026-06-16-yolo-backend-design.md`，实现计划已保存到 `docs/superpowers/plans/2026-06-16-yolo-backend-implementation.md`。
+- 新增 `src/robot_perception/robot_perception/yolo_detector.py`，延迟导入 `ultralytics.YOLO`，把 YOLO 像素框转换成现有归一化 `DetectionResult`。
+- 更新 `src/robot_perception/robot_perception/image_detector_node.py`，新增 `detector_backend`、`yolo_model_path`、`yolo_confidence_threshold` 和 `yolo_target_class` 参数。
+- 新增 `src/robot_perception/config/yolo_detector.yaml` 和 `src/robot_perception/launch/yolo_detector.launch.py`，以 YOLO 模式启动同一个 `image_detector_node`。
+- 新增第 5 周第 2 小课讲义 `src/robot_perception/WEEK_05_02_YOLO_BACKEND.md`，说明 WSL `.venv_yolo --system-site-packages`、YOLO 参数和运行流程。
+- 更新 `.gitignore` 忽略 `.venv_yolo/`，避免后续安装 YOLO 依赖污染 Git 状态。
+- 更新 `README.md`、`ros2_learning_notes.md` 和 `src/robot_perception/README.md`，加入第 5 周第 2 小课入口和正文学习笔记。
 
 Important decisions:
 
@@ -155,6 +163,9 @@ Important decisions:
 - `robot_perception` 是感知节点包；`robot_interfaces` 继续只放消息/服务接口，`robot_simulation` 继续只提供 Gazebo 相机和 bridge。
 - `TargetDetection.msg` 暂不升级成数组消息，第 5 周第 1/2 小课先发布单个最高优先级目标，继续使用归一化 `center_x/center_y/width/height`。
 - 新增 rclpy 节点时复用 clean-exit 模板：`destroy_node()` 也要捕获 `KeyboardInterrupt`，并只在 `rclpy.ok()` 为真时调用 `rclpy.shutdown()`。
+- 第 5 周第 2 小课不接 Windows `D:\pytorch` 环境；YOLO 后端在 WSL/Ubuntu ROS 2 环境内运行，避免跨系统图像传输和结果回传复杂度。
+- YOLO 依赖采用延迟导入：未安装 `ultralytics` 时，颜色检测后端、单元测试和普通包导入仍可运行；只有 `detector_backend:=yolo` 初始化时才要求 YOLO 依赖。
+- 本课建议创建 `.venv_yolo --system-site-packages`，让同一个 Python 环境同时能导入 `ultralytics`、`rclpy` 和 `cv_bridge`。
 
 Verification:
 
@@ -261,11 +272,21 @@ Verification:
 - 已运行安装态 `DetectionResult -> TargetDetection` 转换检查，输出 `red_target 1.0 0.4 0.5 0.3 0.6 True`。
 - 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs timeout -s INT 5s ros2 launch robot_perception color_detector.launch.py`，节点启动并 clean exit；当前沙箱仍有 DDS socket/getifaddrs 权限噪声。
 - 已运行 `git diff --check`，无空白错误。
+- 第 5 周第 2 小课 TDD RED：新增 `src/robot_perception/test/test_yolo_detector.py` 后运行 `source /opt/ros/jazzy/setup.bash && PYTHONPATH=src/robot_perception:$PYTHONPATH python3 -m unittest src/robot_perception/test/test_yolo_detector.py`，失败原因是 `robot_perception.yolo_detector` 不存在。
+- 第 5 周第 2 小课 GREEN：新增 `yolo_detector.py` 后同一测试 4 项通过。
+- 第 5 周第 2 小课资产测试 RED：扩展 `test_perception_assets.py` 后运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && PYTHONPATH=src/robot_perception:$PYTHONPATH python3 -m unittest src/robot_perception/test/test_perception_assets.py`，失败原因是 YOLO YAML、launch 和讲义不存在。
+- 第 5 周第 2 小课资产测试 GREEN：补齐 YOLO YAML、launch、讲义和文档后同一资产测试 8 项通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && PYTHONPATH=src/robot_perception:$PYTHONPATH python3 -m unittest discover -s src/robot_perception/test`，18 个测试通过。
+- 已运行 `python3 -m compileall src/robot_perception`，语法检查通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_interfaces robot_perception`，2 个包构建通过。
+- 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_perception yolo_detector.launch.py --show-args`，确认 `use_sim_time`、`yolo_model_path`、`yolo_confidence_threshold` 和 `yolo_target_class` 参数可加载。
+- 已运行 `git check-ignore -q .venv_yolo/ && echo ignored`，确认 `.venv_yolo/` 会被 Git 忽略。
 
 Remaining tasks:
 
-- 用户在正常桌面终端运行第 5 周第 1 小课两个终端流程，确认 `/target_detection` 和 `/target_detection/debug_image` 能看到 Gazebo 红色目标。
-- 第 5 周第 2 小课：安装/确认 `torch`、`ultralytics` 和模型权重，给 `robot_perception` 增加真实 YOLO detector 后端。
+- 用户在正常 WSL 终端按 `src/robot_perception/WEEK_05_02_YOLO_BACKEND.md` 创建 `.venv_yolo`、安装 `ultralytics`，并实际运行 `ros2 launch robot_perception yolo_detector.launch.py`。
+- 首次使用 `yolov8n.pt` 可能需要联网下载权重；如需离线运行，改用本地 `.pt` 权重路径传给 `yolo_model_path`。
+- 实机验证 Gazebo + YOLO 后端时，观察 `/target_detection` 和 `/target_detection/debug_image`。
 
 Key files:
 
@@ -331,17 +352,42 @@ Key files:
 - `src/robot_simulation/test/test_odom_to_tf.py`
 - `src/robot_perception/README.md`
 - `src/robot_perception/WEEK_05_01_IMAGE_DETECTION_NODE.md`
+- `src/robot_perception/WEEK_05_02_YOLO_BACKEND.md`
 - `src/robot_perception/config/color_detector.yaml`
+- `src/robot_perception/config/yolo_detector.yaml`
 - `src/robot_perception/launch/color_detector.launch.py`
+- `src/robot_perception/launch/yolo_detector.launch.py`
 - `src/robot_perception/robot_perception/color_blob_detector.py`
 - `src/robot_perception/robot_perception/image_detector_node.py`
+- `src/robot_perception/robot_perception/yolo_detector.py`
 - `src/robot_perception/package.xml`
 - `src/robot_perception/setup.py`
 - `src/robot_perception/test/test_color_blob_detector.py`
 - `src/robot_perception/test/test_node_shutdown.py`
 - `src/robot_perception/test/test_perception_assets.py`
+- `src/robot_perception/test/test_yolo_detector.py`
+- `docs/superpowers/specs/2026-06-16-yolo-backend-design.md`
+- `docs/superpowers/plans/2026-06-16-yolo-backend-implementation.md`
 
 ## Session Notes
+
+### 2026-06-16
+
+- Progress/result checkpoint:
+  - 用户确认第 5 周第 2 小课采用 WSL 内安装/使用 YOLO 方案，不复用 Windows `D:\pytorch` 环境。
+  - 设计采用同一个 `image_detector_node`，通过 `detector_backend:=color|yolo` 选择颜色检测或真实 YOLO 后端。
+  - 已新增 `yolo_detector.py`，用 fake YOLO model 做 TDD，覆盖最高置信度选择、置信度阈值、类别过滤和无 ultralytics 注入模型测试。
+  - 已新增 `yolo_detector.yaml`、`yolo_detector.launch.py` 和 `WEEK_05_02_YOLO_BACKEND.md`。
+  - 已更新 README、总学习笔记和 `.gitignore`，`.venv_yolo/` 已确认被忽略。
+- Verification:
+  - `test_yolo_detector.py` 4 项通过。
+  - `test_perception_assets.py` 8 项通过。
+  - `python3 -m unittest discover -s src/robot_perception/test` 在 workspace overlay 下 18 项通过。
+  - `python3 -m compileall src/robot_perception` 通过。
+  - `colcon build --packages-select robot_interfaces robot_perception` 通过。
+  - `ros2 launch robot_perception yolo_detector.launch.py --show-args` 可显示 YOLO launch 参数。
+- Next:
+  - 在正常 WSL 终端创建并激活 `.venv_yolo --system-site-packages`，安装 `ultralytics`，再实际运行 Gazebo + YOLO 后端。
 
 ### 2026-06-16
 

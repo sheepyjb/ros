@@ -216,11 +216,41 @@ ros2 topic echo /target_detection
 
 在 RViz2 中添加 `/target_detection/debug_image` 可以观察画框后的调试图像。
 
+第 5 周第 2 小课接入真实 YOLO 后端。推荐在 WSL 内创建能访问 ROS 2 系统包的 venv：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd /home/sheepyjb/ros
+python3 -m venv .venv_yolo --system-site-packages
+source .venv_yolo/bin/activate
+python3 -m pip install --upgrade pip
+python3 -m pip install ultralytics
+```
+
+用 YOLO 后端启动同一个图像检测节点：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+cd /home/sheepyjb/ros
+source .venv_yolo/bin/activate
+colcon build --packages-select robot_interfaces robot_simulation robot_perception
+source install/setup.bash
+ros2 launch robot_perception yolo_detector.launch.py
+```
+
+常用覆盖参数：
+
+```bash
+ros2 launch robot_perception yolo_detector.launch.py yolo_confidence_threshold:=0.5
+ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:=person
+```
+
 参数默认值在：
 
 ```text
 src/turtlesim_p_controller/config/goal_controller.yaml
 src/robot_perception/config/color_detector.yaml
+src/robot_perception/config/yolo_detector.yaml
 ```
 
 ## Git 使用

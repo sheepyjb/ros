@@ -4,6 +4,24 @@
 
 Symptom:
 
+- 运行 `source /opt/ros/jazzy/setup.bash && PYTHONPATH=src/robot_perception:$PYTHONPATH python3 -m unittest src/robot_perception/test/test_node_shutdown.py` 时，测试导入 `image_detector_node` 报 `ModuleNotFoundError: No module named 'robot_interfaces'`。
+
+Root cause:
+
+- `robot_interfaces/msg/TargetDetection` 是构建后生成的 Python 消息包，只 source 系统 ROS 2 环境还不够；测试导入节点模块时需要加载当前 workspace 的 `install/setup.bash`。
+
+Fix:
+
+- 使用 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && PYTHONPATH=src/robot_perception:$PYTHONPATH python3 -m unittest ...`。
+
+Prevention note:
+
+- 后续凡是测试会导入依赖自定义接口的 ROS 2 Python 节点，先确认已构建接口包，并在测试命令中 source `install/setup.bash`。
+
+## 2026-06-16
+
+Symptom:
+
 - `timeout -s INT ros2 launch robot_perception color_detector.launch.py` 停止节点时，`image_detector_node` 在 `node.destroy_node()` 清理阶段抛出 `KeyboardInterrupt` traceback。
 
 Root cause:

@@ -22,10 +22,14 @@ class RobotPerceptionAssetsTest(unittest.TestCase):
         self.assertTrue((PACKAGE_ROOT / "robot_perception" / "__init__.py").is_file())
         self.assertTrue((PACKAGE_ROOT / "robot_perception" / "color_blob_detector.py").is_file())
         self.assertTrue((PACKAGE_ROOT / "robot_perception" / "image_detector_node.py").is_file())
+        self.assertTrue((PACKAGE_ROOT / "robot_perception" / "yolo_detector.py").is_file())
         self.assertTrue((PACKAGE_ROOT / "config" / "color_detector.yaml").is_file())
+        self.assertTrue((PACKAGE_ROOT / "config" / "yolo_detector.yaml").is_file())
         self.assertTrue((PACKAGE_ROOT / "launch" / "color_detector.launch.py").is_file())
+        self.assertTrue((PACKAGE_ROOT / "launch" / "yolo_detector.launch.py").is_file())
         self.assertTrue((PACKAGE_ROOT / "README.md").is_file())
         self.assertTrue((PACKAGE_ROOT / "WEEK_05_01_IMAGE_DETECTION_NODE.md").is_file())
+        self.assertTrue((PACKAGE_ROOT / "WEEK_05_02_YOLO_BACKEND.md").is_file())
 
     def test_setup_installs_launch_and_config_files(self):
         setup_path = PACKAGE_ROOT / "setup.py"
@@ -83,6 +87,7 @@ class RobotPerceptionAssetsTest(unittest.TestCase):
         self.assertIn("image_topic: /camera/image_raw", config_text)
         self.assertIn("detection_topic: /target_detection", config_text)
         self.assertIn("debug_image_topic: /target_detection/debug_image", config_text)
+        self.assertIn("detector_backend: color", config_text)
         self.assertIn("target_color: red", config_text)
         self.assertIn("min_area_pixels: 200.0", config_text)
         self.assertIn("publish_debug_image: true", config_text)
@@ -106,6 +111,42 @@ class RobotPerceptionAssetsTest(unittest.TestCase):
         self.assertIn("color_detector.yaml", string_literals)
         self.assertIn("use_sim_time", string_literals)
 
+    def test_yolo_config_uses_yolo_backend_and_model_parameters(self):
+        config_path = PACKAGE_ROOT / "config" / "yolo_detector.yaml"
+        if not config_path.is_file():
+            self.fail("robot_perception/config/yolo_detector.yaml should exist")
+
+        config_text = config_path.read_text(encoding="utf-8")
+
+        self.assertIn("image_topic: /camera/image_raw", config_text)
+        self.assertIn("detection_topic: /target_detection", config_text)
+        self.assertIn("debug_image_topic: /target_detection/debug_image", config_text)
+        self.assertIn("detector_backend: yolo", config_text)
+        self.assertIn("yolo_model_path: yolov8n.pt", config_text)
+        self.assertIn("yolo_confidence_threshold: 0.25", config_text)
+        self.assertIn('yolo_target_class: ""', config_text)
+
+    def test_yolo_launch_starts_image_detector_with_yolo_config(self):
+        launch_path = PACKAGE_ROOT / "launch" / "yolo_detector.launch.py"
+        if not launch_path.is_file():
+            self.fail("robot_perception/launch/yolo_detector.launch.py should exist")
+
+        launch_source = launch_path.read_text(encoding="utf-8")
+        launch_tree = ast.parse(launch_source)
+        string_literals = {
+            node.value
+            for node in ast.walk(launch_tree)
+            if isinstance(node, ast.Constant) and isinstance(node.value, str)
+        }
+
+        self.assertIn("robot_perception", string_literals)
+        self.assertIn("image_detector_node", string_literals)
+        self.assertIn("yolo_detector.yaml", string_literals)
+        self.assertIn("use_sim_time", string_literals)
+        self.assertIn("yolo_model_path", string_literals)
+        self.assertIn("yolo_confidence_threshold", string_literals)
+        self.assertIn("yolo_target_class", string_literals)
+
     def test_image_detector_node_uses_cv_bridge_sensor_qos_and_target_message(self):
         node_path = PACKAGE_ROOT / "robot_perception" / "image_detector_node.py"
         if not node_path.is_file():
@@ -119,7 +160,12 @@ class RobotPerceptionAssetsTest(unittest.TestCase):
         self.assertIn("qos_profile_sensor_data", node_source)
         self.assertIn("TargetDetection", node_source)
         self.assertIn("detect_largest_color_blob", node_source)
+        self.assertIn("detector_backend", node_source)
         self.assertIn("draw_detection_box", node_source)
+        self.assertIn("YoloObjectDetector", node_source)
+        self.assertIn("yolo_model_path", node_source)
+        self.assertIn("yolo_confidence_threshold", node_source)
+        self.assertIn("yolo_target_class", node_source)
 
 
 if __name__ == "__main__":

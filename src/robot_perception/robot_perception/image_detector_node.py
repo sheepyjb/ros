@@ -10,6 +10,7 @@ from robot_perception.color_blob_detector import (
     detect_largest_color_blob,
     draw_detection_box,
 )
+from robot_perception.yolo_detector import YoloObjectDetector
 
 
 class ImageDetectorNode(Node):
@@ -31,6 +32,10 @@ class ImageDetectorNode(Node):
         self.declare_parameter("target_color", "red")  # 默认检测红色目标。
         self.declare_parameter("min_area_pixels", 200.0)  # 小于这个面积的目标当成噪声。
         self.declare_parameter("publish_debug_image", True)  # 是否发布调试图像。
+        self.declare_parameter("detector_backend", "color")  # color 或 yolo。
+        self.declare_parameter("yolo_model_path", "yolov8n.pt")  # YOLO 权重路径或模型名。
+        self.declare_parameter("yolo_confidence_threshold", 0.25)  # YOLO 最小置信度。
+        self.declare_parameter("yolo_target_class", "")  # 空字符串表示接受任意类别。
 
         # get_parameter(...).value 会读取最终参数值：
         # 优先级大致是 launch 命令行覆盖 > YAML 文件 > declare_parameter 默认值。
@@ -39,6 +44,8 @@ class ImageDetectorNode(Node):
         self.target_color = self.get_parameter("target_color").value
         self.min_area_pixels = float(self.get_parameter("min_area_pixels").value)
         self.publish_debug_image = bool(self.get_parameter("publish_debug_image").value)
+        self.detector_backend = self.get_parameter("detector_backend").value
+        self.yolo_detector = self._create_yolo_detector()
 
         # 这三个话题名只在创建 subscriber/publisher 时用一次，
         # 所以用局部变量即可，不需要保存成 self.image_topic。
@@ -80,12 +87,7 @@ class ImageDetectorNode(Node):
             self.get_logger().warning(f"无法把 ROS Image 转成 OpenCV 图像：{exc}")
             return
 
-        # 当前第一课用颜色检测替代 YOLO，先验证 ROS 2 图像链路是否通畅。
-        detection = detect_largest_color_blob(
-            cv_image,
-            target_color=self.target_color,
-            min_area_pixels=self.min_area_pixels,
-        )
+        detection = self._detect_image(cv_image)
 
         # 结构化结果发给 /target_detection，后续第 6 周控制节点会用这个话题。
         self.detection_publisher.publish(detection_to_message(detection))
@@ -100,6 +102,30 @@ class ImageDetectorNode(Node):
         # 保留原始图像 header，尤其是 stamp 和 frame_id，方便 RViz2 和 rosbag 对齐时间。
         debug_msg.header = image_msg.header
         self.debug_image_publisher.publish(debug_msg)
+
+    def _create_yolo_detector(self):
+        if self.detector_backend == "color":
+            return None
+
+        if self.detector_backend != "yolo":
+            raise ValueError(f"Unsupported detector_backend: {self.detector_backend}")
+
+        return YoloObjectDetector(
+            model_path=self.get_parameter("yolo_model_path").value,
+            confidence_threshold=float(self.get_parameter("yolo_confidence_threshold").value),
+            target_class=self.get_parameter("yolo_target_class").value,
+        )
+
+    def _detect_image(self, cv_image) -> DetectionResult:
+        if self.detector_backend == "yolo":
+            return self.yolo_detector.detect(cv_image)
+
+        # color 后端保留第 1 小课行为，作为无模型 fallback。
+        return detect_largest_color_blob(
+            cv_image,
+            target_color=self.target_color,
+            min_area_pixels=self.min_area_pixels,
+        )
 
 
 def detection_to_message(detection: DetectionResult) -> TargetDetection:
