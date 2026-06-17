@@ -2,7 +2,7 @@
 
 ## Latest Snapshot
 
-Date: 2026-06-16
+Date: 2026-06-17
 
 Current goal:
 
@@ -16,9 +16,12 @@ Current goal:
 - 第 4 周第 3 小课：键盘控制、雷达、相机、TF/RViz 同步显示已完成代码、讲义和验证。
 - 第 4 周第 2/3 小课 Gazebo 小车已从单后 caster 改为前后两个 caster，修复原地转向时绕轮轴翘起的问题。
 - 第 5 周第 1 小课：ROS 2 图像订阅、`cv_bridge`、OpenCV 颜色目标检测和 `/target_detection` 发布链路已完成代码、讲义和验证。
-- 第 5 周第 2 小课：同一个 `image_detector_node` 已支持 `detector_backend:=color|yolo`，真实 Ultralytics YOLO 后端接入代码、launch/config、讲义和验证已完成。
-- 第 5 周第 2 小课仿真补强：`diffbot_sensors.world.sdf` 已新增 YOLO 可识别的 STOP 标志牌，验证时推荐 `yolo_target_class:="stop sign"`。
-- 下一步在用户正常 WSL 终端创建 `.venv_yolo` 并安装 `ultralytics`，再实际启动 Gazebo + YOLO 后端观察 `/target_detection`。
+- 第 5 周第 2 小课：同一个 `image_detector_node` 已支持 `detector_backend:=color|yolo`，真实 Ultralytics YOLO 后端接入代码、launch/config、讲义和冷启动验证已完成。
+- 第 5 周第 2 小课仿真补强：`diffbot_sensors.world.sdf` 已新增 YOLO 可识别的 STOP 标志牌模型，`diffbot` 初始位姿后移到 `x=-0.45`，冷启动时 STOP 牌完整进入相机视野。
+- WSL 内 `.venv_yolo` 已创建，`ultralytics 8.4.68`、`torch 2.12.0+cu130` 已安装，`robot_perception` 已用虚拟环境 Python 重建；`image_detector_node` shebang 已指向 `.venv_yolo/bin/python3`。
+- 已实测 `ros2 launch robot_simulation diffbot_sensors_rviz.launch.py` + `ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:="stop sign"`：`/target_detection` 输出 `label: stop sign`、`confidence: 0.9717566967010498`、`is_tracking: true`。
+- 第 5 周第 2 小课讲义 `src/robot_perception/WEEK_05_02_YOLO_BACKEND.md` 已按实际 WSL 安装、启动、验证和排错流程重新完善。
+- 下一步建议进入第 5 周第 3 小课：`rosbag2` 感知数据录制与回放调试，录制 `/camera/image_raw`、`/target_detection`、`/target_detection/debug_image`。
 
 Completed work:
 
@@ -126,6 +129,9 @@ Completed work:
 - 新增 `src/robot_simulation/materials/textures/yolo_stop_sign.png`，作为 Gazebo 中的 STOP 标志牌纹理。
 - 更新 `src/robot_simulation/worlds/diffbot_sensors.world.sdf`，新增静态 `yolo_stop_sign_board`，放在相机正前方用于默认 COCO YOLO 模型验证。
 - 更新 `src/robot_simulation/setup.py`，安装 `materials/textures/*.png` 到 package share。
+- 已在 WSL `.venv_yolo --system-site-packages` 中安装 `ultralytics 8.4.68`、`torch 2.12.0+cu130` 和相关依赖。
+- 已清理旧的 `robot_perception` 构建产物并用 `.venv_yolo/bin/python3 -m colcon` 重建，入口脚本已切换为虚拟环境 Python。
+- 已首次下载 `yolov8n.pt` 到仓库根目录，并更新 `.gitignore` 忽略 `*.pt` 权重文件。
 
 Important decisions:
 
@@ -170,6 +176,7 @@ Important decisions:
 - 第 5 周第 2 小课不接 Windows `D:\pytorch` 环境；YOLO 后端在 WSL/Ubuntu ROS 2 环境内运行，避免跨系统图像传输和结果回传复杂度。
 - YOLO 依赖采用延迟导入：未安装 `ultralytics` 时，颜色检测后端、单元测试和普通包导入仍可运行；只有 `detector_backend:=yolo` 初始化时才要求 YOLO 依赖。
 - 本课建议创建 `.venv_yolo --system-site-packages`，让同一个 Python 环境同时能导入 `ultralytics`、`rclpy` 和 `cv_bridge`。
+- ROS 2 `ament_python` console script 的 shebang 由构建时 Python 决定；如果先用系统 Python 构建、后装 venv，必须清理对应包 `build/` 和 `install/` 后用 venv Python 重建。
 
 Verification:
 
@@ -293,12 +300,19 @@ Verification:
 - 已运行 `source /opt/ros/jazzy/setup.bash && colcon build --packages-select robot_simulation`，构建通过。
 - 已确认 `install/robot_simulation/share/robot_simulation/materials/textures/yolo_stop_sign.png` 存在。
 - 已运行 `source /opt/ros/jazzy/setup.bash && source install/setup.bash && ROS_LOG_DIR=/tmp/ros2_launch_logs ros2 launch robot_simulation diffbot_sensors_rviz.launch.py --show-args`，主 launch 可加载。
+- 已运行 `.venv_yolo` 环境检查：`python3 -c "import ultralytics; import torch; import rclpy; import cv_bridge; print('yolo ros env ok')"`，通过。
+- 已确认 `install/robot_perception/lib/robot_perception/image_detector_node` 第一行为 `#!/home/sheepyjb/ros/.venv_yolo/bin/python3`。
+- 已运行 `ROS_LOG_DIR=/tmp/ros2_yolo_launch_logs timeout 90s ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:="stop sign"`，`yolov8n.pt` 下载完成，节点持续运行到超时，无 `ultralytics` 导入错误。
+- 已在 `.venv_yolo` 下运行 `python3 -m unittest discover -s src/robot_perception/test`，18 个测试通过。
+- 已清理旧 Gazebo/ROS 残留进程，并将 `diffbot_sensors_rviz.launch.py` 的 `on_exit_shutdown` 改为 `false`，冷启动仿真不再刷 `TF_OLD_DATA`。
+- 已将 sensor world 中 `diffbot` 初始位姿改为 `-0.45 0 0 0 0 0`，STOP 牌冷启动完整进入 `/camera/image_raw`。
+- 已运行 Gazebo + YOLO 冷启动验证，抓取 `/camera/image_raw`、`/target_detection/debug_image` 和 `/target_detection`；YOLO 输出 `label: stop sign`、`confidence: 0.9717566967010498`、`is_tracking: true`。
+- 已运行最终验证：`robot_perception` 18 个测试通过，`robot_simulation` 17 个测试通过，`gz sdf` 输出 `Valid.`，`compileall` 通过，`colcon build --packages-select robot_simulation robot_perception` 通过。
 
 Remaining tasks:
 
-- 用户在正常 WSL 终端按 `src/robot_perception/WEEK_05_02_YOLO_BACKEND.md` 创建 `.venv_yolo`、安装 `ultralytics`，并实际运行 `ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:="stop sign"`。
-- 首次使用 `yolov8n.pt` 可能需要联网下载权重；如需离线运行，改用本地 `.pt` 权重路径传给 `yolo_model_path`。
-- 实机验证 Gazebo + YOLO 后端时，观察 `/target_detection` 和 `/target_detection/debug_image`。
+- 第 5 周第 2 小课代码、仿真和讲义已完成；如需换模型，可用本地 `.pt` 权重路径传给 `yolo_model_path`。
+- 下一步进入第 5 周第 3 小课：使用 `rosbag2` 录制和回放 `/camera/image_raw`、`/target_detection`、`/target_detection/debug_image`，用于不用反复启动 Gazebo 的感知调参。
 
 Key files:
 

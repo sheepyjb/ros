@@ -1,5 +1,59 @@
 # CODEX_PITFALLS
 
+## 2026-06-17
+
+Symptom:
+
+- RViz 持续刷 `TF_OLD_DATA ignoring data from the past for frame base_link`，Gazebo/RViz 有时看起来自动关闭或显示旧场景。
+
+Root cause:
+
+- WSL 中残留了旧的 `gz sim`/launch 进程，仍在发布旧 `/clock` 或旧 world 状态；新旧仿真时间混在一起会让 TF 缓存认为数据来自过去。Gazebo launch 的 `on_exit_shutdown` 设为 true 时，GUI wrapper 退出还可能带着 RViz/bridge 一起关闭。
+
+Fix:
+
+- 用 `ps -ef | rg 'gz sim|gazebo|rviz2|ros2 launch|image_detector_node|parameter_bridge|robot_state_publisher|odom_to_tf'` 检查残留，只清理确定是旧的 PID；`diffbot_sensors_rviz.launch.py` 中将 `on_exit_shutdown` 改为 `false`。
+
+Prevention note:
+
+- 每次排查 Gazebo/RViz 异常前先查旧进程。看到 `exit code -2` 时先确认是否是 Ctrl-C/SIGINT，不要直接当作 launch 文件错误。
+
+## 2026-06-17
+
+Symptom:
+
+- Gazebo 3D 视角中 STOP 标志牌可能看起来是黑牌，或相机画面上沿裁掉 STOP 牌顶部。
+
+Root cause:
+
+- YOLO 只消费 `/camera/image_raw`，Gazebo GUI 视角可能看到牌子的背面、侧面或未刷新材质，不能代表相机输入；原始小车位置离 STOP 牌太近，导致相机视野裁切。
+
+Fix:
+
+- 以 RViz2 Image 面板和 `/target_detection/debug_image` 为准验证；将 `diffbot_sensors.world.sdf` 中 `diffbot` 初始位姿改为 `-0.45 0 0 0 0 0`，冷启动后 STOP 牌完整入画，YOLO 实测输出 `label: stop sign`、`confidence: 0.9717566967010498`。
+
+Prevention note:
+
+- 修改 Gazebo world 后必须重新 `colcon build --packages-select robot_simulation`，因为 launch 使用 `install/` 下的 world。检测类问题优先抓 `/camera/image_raw` 或 `/target_detection/debug_image`，不要只看 Gazebo 3D GUI。
+
+## 2026-06-16
+
+Symptom:
+
+- 激活 `.venv_yolo` 后执行 `ros2 launch robot_perception yolo_detector.launch.py yolo_target_class:="stop sign"`，节点仍报 `ModuleNotFoundError: No module named 'ultralytics'`。
+
+Root cause:
+
+- `ultralytics` 已安装在 `.venv_yolo`，但 `install/robot_perception/lib/robot_perception/image_detector_node` 是之前用系统 Python 构建生成的入口脚本，shebang 仍是 `#!/usr/bin/python3`，launch 时没有使用虚拟环境 Python。
+
+Fix:
+
+- 激活 `.venv_yolo` 后删除旧的 `build/robot_perception` 和 `install/robot_perception`，再用 `python3 -m colcon build --packages-select robot_interfaces robot_simulation robot_perception` 重建；确认入口脚本第一行为 `#!/home/sheepyjb/ros/.venv_yolo/bin/python3`。
+
+Prevention note:
+
+- 以后新增需要 pip 依赖的 ROS 2 `ament_python` 节点时，先激活对应 venv，再用 `python3 -m colcon build` 生成入口脚本；如果之前已用系统 Python 构建过，必须清理对应包的 `build/` 和 `install/` 产物后重建。
+
 ## 2026-06-16
 
 Symptom:

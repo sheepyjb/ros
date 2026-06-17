@@ -26,6 +26,8 @@ class RobotSimulationAssetsTest(unittest.TestCase):
         self.assertTrue((PACKAGE_ROOT / "config" / "diff_drive_bridge.yaml").is_file())
         self.assertTrue((PACKAGE_ROOT / "config" / "sensor_bridge.yaml").is_file())
         self.assertTrue((PACKAGE_ROOT / "materials" / "textures" / "yolo_stop_sign.png").is_file())
+        self.assertTrue((PACKAGE_ROOT / "models" / "yolo_stop_sign_board" / "meshes" / "stop_sign_board.obj").is_file())
+        self.assertTrue((PACKAGE_ROOT / "models" / "yolo_stop_sign_board" / "meshes" / "stop_sign_board.mtl").is_file())
         self.assertTrue((PACKAGE_ROOT / "rviz" / "sensors.rviz").is_file())
         self.assertTrue((PACKAGE_ROOT / "WEEK_04_01_GAZEBO_ENVIRONMENT.md").is_file())
         self.assertTrue((PACKAGE_ROOT / "WEEK_04_02_DIFFBOT_DRIVE_IN_GAZEBO.md").is_file())
@@ -47,6 +49,8 @@ class RobotSimulationAssetsTest(unittest.TestCase):
         self.assertIn("worlds/*.sdf", string_literals)
         self.assertIn("config/*.yaml", string_literals)
         self.assertIn("materials/textures/*.png", string_literals)
+        self.assertIn("models/yolo_stop_sign_board/meshes/*.obj", string_literals)
+        self.assertIn("models/yolo_stop_sign_board/meshes/*.mtl", string_literals)
         self.assertIn("rviz/*.rviz", string_literals)
 
     def test_package_declares_gazebo_dependencies(self):
@@ -240,6 +244,7 @@ class RobotSimulationAssetsTest(unittest.TestCase):
 
         model = world.find("model[@name='diffbot']")
         self.assertIsNotNone(model)
+        self.assertEqual("-0.45 0 0 0 0 0", model.find("pose").text)
 
         links = {link.attrib["name"] for link in model.findall("link")}
         self.assertIn("base_link", links)
@@ -291,13 +296,13 @@ class RobotSimulationAssetsTest(unittest.TestCase):
         self.assertIsNotNone(stop_sign_link)
         stop_sign_visual = stop_sign_link.find("visual[@name='stop_sign_visual']")
         self.assertIsNotNone(stop_sign_visual)
-        self.assertEqual("0 0 0 0 -1.5708 0", stop_sign_visual.find("pose").text)
-        self.assertEqual("0 0 1", stop_sign_visual.find("geometry/plane/normal").text)
-        self.assertEqual("0.90 0.90", stop_sign_visual.find("geometry/plane/size").text)
         self.assertEqual(
-            "../materials/textures/yolo_stop_sign.png",
-            stop_sign_visual.find("material/pbr/metal/albedo_map").text,
+            "package://robot_simulation/models/yolo_stop_sign_board/meshes/stop_sign_board.obj",
+            stop_sign_visual.find("geometry/mesh/uri").text,
         )
+
+        mesh_material = PACKAGE_ROOT / "models" / "yolo_stop_sign_board" / "meshes" / "stop_sign_board.mtl"
+        self.assertIn("map_Kd ../../../materials/textures/yolo_stop_sign.png", mesh_material.read_text(encoding="utf-8"))
 
     def test_sensor_bridge_connects_motion_sensor_and_tf_topics(self):
         config_path = PACKAGE_ROOT / "config" / "sensor_bridge.yaml"
@@ -320,7 +325,7 @@ class RobotSimulationAssetsTest(unittest.TestCase):
         self.assertIn('gz_type_name: "gz.msgs.CameraInfo"', config_text)
         self.assertIn('frame_id: "laser_link"', config_text)
         self.assertIn('frame_id: "camera_optical_frame"', config_text)
-        self.assertIn("qos_profile: SENSOR_DATA", config_text)
+        self.assertNotIn("qos_profile: SENSOR_DATA", config_text)
 
     def test_sensor_rviz_config_shows_robot_tf_scan_and_camera(self):
         rviz_path = PACKAGE_ROOT / "rviz" / "sensors.rviz"
@@ -361,6 +366,12 @@ class RobotSimulationAssetsTest(unittest.TestCase):
         self.assertIn("odom_to_tf", string_literals)
         self.assertIn("rviz2", string_literals)
         self.assertIn("sensors.rviz", string_literals)
+        self.assertIn("package://robot_simulation/models/yolo_stop_sign_board/meshes/stop_sign_board.obj", string_literals)
+        self.assertIn("on_exit_shutdown", string_literals)
+        self.assertIn("false", string_literals)
+        self.assertIn("diffbot_sensors.resolved.world.sdf", string_literals)
+        self.assertIn("file://", launch_source)
+        self.assertIn("as_posix", launch_source)
 
     def test_week_04_03_documents_direct_interactive_keyboard_teleop(self):
         lesson_path = PACKAGE_ROOT / "WEEK_04_03_SENSORS_TF_RVIZ.md"

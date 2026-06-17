@@ -20,6 +20,11 @@ setup(
             os.path.join("share", package_name, "materials", "textures"),
             glob("materials/textures/*.png"),
         ),
+        (
+            os.path.join("share", package_name, "models", "yolo_stop_sign_board", "meshes"),
+            glob("models/yolo_stop_sign_board/meshes/*.obj")
+            + glob("models/yolo_stop_sign_board/meshes/*.mtl"),
+        ),
         (os.path.join("share", package_name, "rviz"), glob("rviz/*.rviz")),
     ],
     install_requires=["setuptools"],

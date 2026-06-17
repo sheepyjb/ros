@@ -1,4 +1,5 @@
 from pathlib import Path
+import tempfile
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -8,12 +9,28 @@ from launch_ros.actions import Node
 import xacro
 
 
+STOP_SIGN_MESH_PLACEHOLDER = "package://robot_simulation/models/yolo_stop_sign_board/meshes/stop_sign_board.obj"
+
+
+def _write_resolved_world(world_path, mesh_path):
+    world_text = world_path.read_text(encoding="utf-8")
+    mesh_uri = "file://" + mesh_path.resolve().as_posix()
+    resolved_world_text = world_text.replace(STOP_SIGN_MESH_PLACEHOLDER, mesh_uri)
+
+    resolved_world_path = Path(tempfile.gettempdir()) / "diffbot_sensors.resolved.world.sdf"
+    resolved_world_path.write_text(resolved_world_text, encoding="utf-8")
+    return resolved_world_path
+
+
 def generate_launch_description():
     simulation_share = Path(get_package_share_directory("robot_simulation"))
     description_share = Path(get_package_share_directory("robot_description"))
     ros_gz_sim_share = Path(get_package_share_directory("ros_gz_sim"))
 
-    world_path = simulation_share / "worlds" / "diffbot_sensors.world.sdf"
+    world_path = _write_resolved_world(
+        simulation_share / "worlds" / "diffbot_sensors.world.sdf",
+        simulation_share / "models" / "yolo_stop_sign_board" / "meshes" / "stop_sign_board.obj",
+    )
     bridge_config_path = simulation_share / "config" / "sensor_bridge.yaml"
     rviz_path = simulation_share / "rviz" / "sensors.rviz"
     gz_launch_path = ros_gz_sim_share / "launch" / "gz_sim.launch.py"
@@ -27,7 +44,7 @@ def generate_launch_description():
                 PythonLaunchDescriptionSource(str(gz_launch_path)),
                 launch_arguments={
                     "gz_args": f"-r {world_path}",
-                    "on_exit_shutdown": "True",
+                    "on_exit_shutdown": "false",
                 }.items(),
             ),
             Node(

@@ -85,7 +85,7 @@ Visualization Manager:
       Size (m): 0.03
       Style: Flat Squares
       Topic: /scan
-      Unreliable: true
+      Unreliable: false
       Use Fixed Frame: true
       Use rainbow: false
       Value: true
@@ -98,7 +98,7 @@ Visualization Manager:
       Normalize Range: true
       Queue Size: 10
       Topic: /camera/image_raw
-      Unreliable: true
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:

@@ -125,28 +125,17 @@
           </geometry>
         </collision>
         <visual name="stop_sign_visual">
-          <pose>0 0 0 0 -1.5708 0</pose>
           <geometry>
-            <plane>
-              <normal>0 0 1</normal>
-              <size>0.90 0.90</size>
-            </plane>
+            <mesh>
+              <uri>package://robot_simulation/models/yolo_stop_sign_board/meshes/stop_sign_board.obj</uri>
+            </mesh>
           </geometry>
-          <material>
-            <pbr>
-              <metal>
-                <albedo_map>../materials/textures/yolo_stop_sign.png</albedo_map>
-                <roughness>0.8</roughness>
-                <metalness>0.0</metalness>
-              </metal>
-            </pbr>
-          </material>
         </visual>
       </link>
     </model>
 
     <model name="diffbot">
-      <pose>0 0 0 0 0 0</pose>
+      <pose>-0.45 0 0 0 0 0</pose>
 
       <link name="base_link">
         <pose>0 0 0.16 0 0 0</pose>
